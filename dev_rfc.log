@@ -1,0 +1,1609 @@
+
+**** Log file opened at 2025-08-08 12:10:13.749432 UTC-04:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Proyectos Desarrollo-Invertec\Invertec-Python\rfc_sap
+Program                   : python
+Process ID                : 07964
+User                      : wcorrea
+Hardware                  : PC with Windows NT 12x AMD64 Level 6 (Mod 154 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : WCORREA
+IP address                : 192.168.2.81
+IPv6 address              : fe80::ffb4:c3ab:ffc8:8b05
+Global trace level        : 0
+
+2025-08-08 12:10:13.751424 [29052] >> Info entry
+	Did not find config file C:\Proyectos Desarrollo-Invertec\Invertec-Python\rfc_sap\sapnwrfc.ini.
+
+**** Log file opened at 2025-10-06 19:31:14.949187 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 08068
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 19:31:14.946860 [04604] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD09CC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFD09CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFD09CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFD3E8AB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFD3E8AB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFD3E8C330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFD3EA4800: python312.dll!PyMapping_Check()
+	0x7FFFD3EA3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFD3EA200C: python312.dll!PyArena_Free()
+	0x7FFFD3EA200C: python312.dll!PyArena_Free()
+	0x7FFFD3F63D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFD3F63AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFD3F6321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFD3F628BC: python312.dll!PyFile_GetLine()
+	0x7FFFD3F628BC: python312.dll!PyFile_GetLine()
+	0x7FFFD3EF83F0: python312.dll!Py_RunMain()
+	0x7FFFD3EF83F0: python312.dll!Py_RunMain()
+	0x7FFFD3E54820: python312.dll!Py_Main()
+	0x7FFFD3E54820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+2025-10-06 19:31:15.257010 [04604] >> Error entry
+	[Handle: 1827583325408	ConvID: 98647850	Target: S4HANAIFPRD.invertec.cl	SysID: IFP	SysNr: 00	User: ETL_INVERTEC	Client: 300	Language: S	Codepage: 4103]
+	RfcSystemException: Key: TSV_TNEW_PAGE_ALLOC_FAILED, Code: RFC_ABAP_RUNTIME_FAILURE, Message: No more memory available to add rows to an internal table.
+
+**** Log file opened at 2025-10-06 19:38:49.032776 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 03332
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 19:38:49.031483 [05836] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD09CC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFD09CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFD09CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFD3E8AB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFD3E8AB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFD3E8C330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFD3EA4800: python312.dll!PyMapping_Check()
+	0x7FFFD3EA3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFD3EA200C: python312.dll!PyArena_Free()
+	0x7FFFD3EA200C: python312.dll!PyArena_Free()
+	0x7FFFD3F63D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFD3F63AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFD3F6321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFD3F628BC: python312.dll!PyFile_GetLine()
+	0x7FFFD3F628BC: python312.dll!PyFile_GetLine()
+	0x7FFFD3EF83F0: python312.dll!Py_RunMain()
+	0x7FFFD3EF83F0: python312.dll!Py_RunMain()
+	0x7FFFD3E54820: python312.dll!Py_Main()
+	0x7FFFD3E54820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+2025-10-06 19:38:49.303257 [05836] >> Error entry
+	[Handle: 2613895708736	ConvID: 99221653	Target: S4HANAIFPRD.invertec.cl	SysID: IFP	SysNr: 00	User: ETL_INVERTEC	Client: 300	Language: S	Codepage: 4103]
+	RfcSystemException: Key: TSV_TNEW_PAGE_ALLOC_FAILED, Code: RFC_ABAP_RUNTIME_FAILURE, Message: No more memory available to add rows to an internal table.
+
+**** Log file opened at 2025-10-06 19:40:35.000996 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 02712
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 19:40:34.999876 [07748] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD0A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFD09CC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFD09CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFD09CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFD3E8AB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFD3E8AB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFD3E8C330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFD3EA4800: python312.dll!PyMapping_Check()
+	0x7FFFD3EA3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFD3EA200C: python312.dll!PyArena_Free()
+	0x7FFFD3EA200C: python312.dll!PyArena_Free()
+	0x7FFFD3F63D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFD3F63AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFD3F6321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFD3F628BC: python312.dll!PyFile_GetLine()
+	0x7FFFD3F628BC: python312.dll!PyFile_GetLine()
+	0x7FFFD3EF83F0: python312.dll!Py_RunMain()
+	0x7FFFD3EF83F0: python312.dll!Py_RunMain()
+	0x7FFFD3E54820: python312.dll!Py_Main()
+	0x7FFFD3E54820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-10-06 19:43:38.157934 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 06320
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 19:43:38.156668 [06636] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA63EC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AC330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFBF9C4800: python312.dll!PyMapping_Check()
+	0x7FFFBF9C3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBFA83D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFBFA83AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFBFA8321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBF974820: python312.dll!Py_Main()
+	0x7FFFBF974820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-10-06 19:47:17.535597 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 04852
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 19:47:17.534584 [01664] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA63EC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AC330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFBF9C4800: python312.dll!PyMapping_Check()
+	0x7FFFBF9C3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBFA83D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFBFA83AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFBFA8321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBF974820: python312.dll!Py_Main()
+	0x7FFFBF974820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-10-06 19:50:23.828738 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 06060
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 19:50:23.827679 [08148] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA63EC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AC330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFBF9C4800: python312.dll!PyMapping_Check()
+	0x7FFFBF9C3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBFA83D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFBFA83AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFBFA8321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBF974820: python312.dll!Py_Main()
+	0x7FFFBF974820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+2025-10-06 19:50:24.097337 [08148] >> Error entry
+	[Handle: 2122530414896	ConvID: 00053966	Target: S4HANAIFPRD.invertec.cl	SysID: IFP	SysNr: 00	User: ETL_INVERTEC	Client: 300	Language: S	Codepage: 4103]
+	RfcSystemException: Key: TSV_TNEW_PAGE_ALLOC_FAILED, Code: RFC_ABAP_RUNTIME_FAILURE, Message: No more memory available to add rows to an internal table.
+
+**** Log file opened at 2025-10-06 19:50:55.217698 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 04324
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 19:50:55.216689 [03576] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA63EC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AC330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFBF9C4800: python312.dll!PyMapping_Check()
+	0x7FFFBF9C3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBFA83D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFBFA83AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFBFA8321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBF974820: python312.dll!Py_Main()
+	0x7FFFBF974820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-10-06 19:54:06.469978 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 03552
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 19:54:06.469419 [04988] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA63EC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AC330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFBF9C4800: python312.dll!PyMapping_Check()
+	0x7FFFBF9C3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBFA83D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFBFA83AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFBFA8321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBF974820: python312.dll!Py_Main()
+	0x7FFFBF974820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+2025-10-06 19:54:06.729180 [04988] >> Error entry
+	[Handle: 2080684477536	ConvID: 00326616	Target: S4HANAIFPRD.invertec.cl	SysID: IFP	SysNr: 00	User: ETL_INVERTEC	Client: 300	Language: S	Codepage: 4103]
+	RfcSystemException: Key: TSV_TNEW_PAGE_ALLOC_FAILED, Code: RFC_ABAP_RUNTIME_FAILURE, Message: No more memory available to add rows to an internal table.
+
+**** Log file opened at 2025-10-06 19:59:16.798667 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 02800
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 19:59:16.797718 [07540] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA63EC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AC330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFBF9C4800: python312.dll!PyMapping_Check()
+	0x7FFFBF9C3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBFA83D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFBFA83AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFBFA8321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBF974820: python312.dll!Py_Main()
+	0x7FFFBF974820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+2025-10-06 19:59:17.072401 [07540] >> Error entry
+	[Handle: 2731566258672	ConvID: 00490873	Target: S4HANAIFPRD.invertec.cl	SysID: IFP	SysNr: 00	User: ETL_INVERTEC	Client: 300	Language: S	Codepage: 4103]
+	RfcSystemException: Key: TSV_TNEW_PAGE_ALLOC_FAILED, Code: RFC_ABAP_RUNTIME_FAILURE, Message: No more memory available to add rows to an internal table.
+
+**** Log file opened at 2025-10-06 20:03:53.688979 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 07732
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 20:03:53.687917 [00344] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA63EC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AC330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFBF9C4800: python312.dll!PyMapping_Check()
+	0x7FFFBF9C3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBFA83D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFBFA83AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFBFA8321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBF974820: python312.dll!Py_Main()
+	0x7FFFBF974820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+2025-10-06 20:03:53.950603 [00344] >> Error entry
+	[Handle: 1786141618864	ConvID: 00830621	Target: S4HANAIFPRD.invertec.cl	SysID: IFP	SysNr: 00	User: ETL_INVERTEC	Client: 300	Language: S	Codepage: 4103]
+	RfcSystemException: Key: TSV_TNEW_PAGE_ALLOC_FAILED, Code: RFC_ABAP_RUNTIME_FAILURE, Message: No more memory available to add rows to an internal table.
+
+**** Log file opened at 2025-10-06 20:10:52.219604 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 02336
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 20:10:52.218577 [07616] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA63EC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AC330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFBF9C4800: python312.dll!PyMapping_Check()
+	0x7FFFBF9C3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBFA83D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFBFA83AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFBFA8321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBF974820: python312.dll!Py_Main()
+	0x7FFFBF974820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+2025-10-06 20:10:52.488842 [07616] >> Error entry
+	[Handle: 1696588729536	ConvID: 01316670	Target: S4HANAIFPRD.invertec.cl	SysID: IFP	SysNr: 00	User: ETL_INVERTEC	Client: 300	Language: S	Codepage: 4103]
+	RfcSystemException: Key: TSV_TNEW_PAGE_ALLOC_FAILED, Code: RFC_ABAP_RUNTIME_FAILURE, Message: No more memory available to add rows to an internal table.
+
+**** Log file opened at 2025-10-06 20:18:13.485556 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 04632
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 20:18:13.484475 [00736] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA63EC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AC330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFBF9C4800: python312.dll!PyMapping_Check()
+	0x7FFFBF9C3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBFA83D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFBFA83AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFBFA8321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBF974820: python312.dll!Py_Main()
+	0x7FFFBF974820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+2025-10-06 20:18:13.767617 [00736] >> Error entry
+	[Handle: 3012180557328	ConvID: 01860243	Target: S4HANAIFPRD.invertec.cl	SysID: IFP	SysNr: 00	User: ETL_INVERTEC	Client: 300	Language: S	Codepage: 4103]
+	RfcSystemException: Key: TSV_TNEW_PAGE_ALLOC_FAILED, Code: RFC_ABAP_RUNTIME_FAILURE, Message: No more memory available to add rows to an internal table.
+
+**** Log file opened at 2025-10-06 20:21:52.533555 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 03300
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-06 20:21:52.532528 [06216] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA64293D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFA63EC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFA63EC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AAB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFBF9AC330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFBF9C4800: python312.dll!PyMapping_Check()
+	0x7FFFBF9C3FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBF9C200C: python312.dll!PyArena_Free()
+	0x7FFFBFA83D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFBFA83AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFBFA8321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA828BC: python312.dll!PyFile_GetLine()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBFA183F0: python312.dll!Py_RunMain()
+	0x7FFFBF974820: python312.dll!Py_Main()
+	0x7FFFBF974820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+2025-10-06 20:21:52.793323 [06216] >> Error entry
+	[Handle: 2145225609792	ConvID: 02116181	Target: S4HANAIFPRD.invertec.cl	SysID: IFP	SysNr: 00	User: ETL_INVERTEC	Client: 300	Language: S	Codepage: 4103]
+	RfcSystemException: Key: TSV_TNEW_PAGE_ALLOC_FAILED, Code: RFC_ABAP_RUNTIME_FAILURE, Message: No more memory available to add rows to an internal table.
+
+**** Log file opened at 2025-10-08 18:33:10.859203 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 07748
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-08 18:33:10.858451 [04180] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FFFBCE393D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFBCE393D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFBCE393D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFBCE393D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFBCE393D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFBCE393D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FFFBCDFC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FFFBCDFC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFBCDFC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FFFCD94AB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFCD94AB90: python312.dll!PyObject_Vectorcall()
+	0x7FFFCD94C330: python312.dll!PyEval_EvalFrameDefault()
+	0x7FFFCD964800: python312.dll!PyMapping_Check()
+	0x7FFFCD963FD4: python312.dll!PyEval_EvalCode()
+	0x7FFFCD96200C: python312.dll!PyArena_Free()
+	0x7FFFCD96200C: python312.dll!PyArena_Free()
+	0x7FFFCDA23D88: python312.dll!PyImport_FixupExtensionObject()
+	0x7FFFCDA23AF4: python312.dll!PyRun_SimpleFileObject()
+	0x7FFFCDA2321C: python312.dll!PyRun_AnyFileObject()
+	0x7FFFCDA228BC: python312.dll!PyFile_GetLine()
+	0x7FFFCDA228BC: python312.dll!PyFile_GetLine()
+	0x7FFFCD9B83F0: python312.dll!Py_RunMain()
+	0x7FFFCD9B83F0: python312.dll!Py_RunMain()
+	0x7FFFCD914820: python312.dll!Py_Main()
+	0x7FFFCD914820: python.exe!Py_Main()
+	0x7FFFF4DB7AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FFFF566A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-10-26 16:00:31.656592 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 06360
+User                      : Administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-26 16:00:31.655527 [01620] >> Error entry
+	[Handle: 2410817462320	ConvID: 	Target: 	SysID: 	SysNr: 	User: 	Codepage: 4103]
+	RfcCommunicationException: Return Value: 20, Code: RFC_COMMUNICATION_FAILURE, Message: 
+LOCATION    CPIC (TCP/IP) on local host with Unicode
+ERROR       partner '192.168.0.6:3300' not reached
+TIME        Sun Oct 26 16:00:31 2025
+RELEASE     754
+COMPONENT   NI (network interface)
+VERSION     40
+RC          -10
+MODULE      D:/depot/bas/754_REL/src/base/ni/nixxi.cpp
+LINE        3458
+DETAIL      NiPConnect2: 192.168.0.6:3300
+SYSTEM CALL connect
+ERRNO       10060
+ERRNO TEXT  WSAETIMEDOUT: Connection timed out
+COUNTER     2
+
+
+**** Log file opened at 2025-10-26 18:00:24.891369 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\desarrollos\python\tablas_sap
+Program                   : python
+Process ID                : 07696
+User                      : Administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-10-26 18:00:24.890335 [01836] >> Error entry
+	[Handle: 2873174707808	ConvID: 	Target: 	SysID: 	SysNr: 	User: 	Codepage: 4103]
+	RfcCommunicationException: Return Value: 20, Code: RFC_COMMUNICATION_FAILURE, Message: 
+LOCATION    CPIC (TCP/IP) on local host with Unicode
+ERROR       partner '192.168.0.6:3300' not reached
+TIME        Sun Oct 26 18:00:24 2025
+RELEASE     754
+COMPONENT   NI (network interface)
+VERSION     40
+RC          -10
+MODULE      D:/depot/bas/754_REL/src/base/ni/nixxi.cpp
+LINE        3458
+DETAIL      NiPConnect2: 192.168.0.6:3300
+SYSTEM CALL connect
+ERRNO       10060
+ERRNO TEXT  WSAETIMEDOUT: Connection timed out
+COUNTER     2
+
+
+**** Log file opened at 2025-12-05 08:55:15.243835 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 07520
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 08:55:15.241763 [01044] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7BDC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B7BDC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B7BDC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8671990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8671990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8672610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8627E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8626AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B86DDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B86DE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B86BA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B86BA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B86BCCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B86BCDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B86BC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B861891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B86186E8: python312.dll!Py_RunMain()
+	0x7FF8B86186B8: python312.dll!Py_Main()
+	0x7FF8B86186B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 08:57:40.127191 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 07932
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 08:57:40.126152 [07976] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7BDC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B7BDC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B7BDC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8671990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8671990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8672610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8627E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8626AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B86DDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B86DE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B86BA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B86BA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B86BCCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B86BCDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B86BC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B861891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B86186E8: python312.dll!Py_RunMain()
+	0x7FF8B86186B8: python312.dll!Py_Main()
+	0x7FF8B86186B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 09:05:41.279794 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 02356
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 09:05:41.278704 [06604] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7BDC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B7BDC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B7BDC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8671990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8671990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8672610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8627E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8626AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B86DDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B86DE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B86BA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B86BA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B86BCCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B86BCDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B86BC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B861891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B86186E8: python312.dll!Py_RunMain()
+	0x7FF8B86186B8: python312.dll!Py_Main()
+	0x7FF8B86186B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 09:47:50.038354 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 07580
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 09:47:50.037795 [01032] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7C193D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7BDC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B7BDC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B7BDC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8671990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8671990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8672610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8627E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8626AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B86DDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B86DE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B86BA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B86BA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B86BCCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B86BCDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B86BC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B861891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B86186E8: python312.dll!Py_RunMain()
+	0x7FF8B86186B8: python312.dll!Py_Main()
+	0x7FF8B86186B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 09:53:59.756667 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 04392
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 09:53:59.755386 [06536] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B79CC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8462610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8417E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8416AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B84CDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B84CE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B84AA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B84AA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B84ACCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B84ACDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B84AC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B840891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B84086E8: python312.dll!Py_RunMain()
+	0x7FF8B84086B8: python312.dll!Py_Main()
+	0x7FF8B84086B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 09:55:25.205226 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 07852
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 09:55:25.204327 [02916] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B79CC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8462610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8417E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8416AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B84CDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B84CE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B84AA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B84AA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B84ACCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B84ACDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B84AC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B840891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B84086E8: python312.dll!Py_RunMain()
+	0x7FF8B84086B8: python312.dll!Py_Main()
+	0x7FF8B84086B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 09:55:45.704908 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 06592
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 09:55:45.704472 [05316] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B79CC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8462610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8417E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8416AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B84CDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B84CE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B84AA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B84AA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B84ACCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B84ACDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B84AC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B840891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B84086E8: python312.dll!Py_RunMain()
+	0x7FF8B84086B8: python312.dll!Py_Main()
+	0x7FF8B84086B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 09:59:05.948206 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 05084
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 09:59:05.947767 [07024] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B253C1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B253C1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B253C1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8271990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8271990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8272610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8227E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8226AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B82DDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B82DE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B82BA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B82BA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B82BCCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B82BCDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B82BC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B821891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B82186E8: python312.dll!Py_RunMain()
+	0x7FF8B82186B8: python312.dll!Py_Main()
+	0x7FF8B82186B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 10:00:02.169414 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 01676
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 10:00:02.168456 [01172] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B253C1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B253C1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B253C1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8271990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8271990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8272610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8227E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8226AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B82DDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B82DE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B82BA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B82BA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B82BCCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B82BCDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B82BC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B821891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B82186E8: python312.dll!Py_RunMain()
+	0x7FF8B82186B8: python312.dll!Py_Main()
+	0x7FF8B82186B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+2025-12-05 10:00:02.585727 [01172] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B253C1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B253C1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B253C1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8271990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8271990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8272610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8227E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8226AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B82DDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B82DE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B82BA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B82BA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B82BCCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B82BCDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B82BC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B821891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B82186E8: python312.dll!Py_RunMain()
+	0x7FF8B82186B8: python312.dll!Py_Main()
+	0x7FF8B82186B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 10:02:42.753800 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 06392
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 10:02:42.752814 [01076] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B79CC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8462610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8417E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8416AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B84CDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B84CE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B84AA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B84AA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B84ACCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B84ACDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B84AC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B840891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B84086E8: python312.dll!Py_RunMain()
+	0x7FF8B84086B8: python312.dll!Py_Main()
+	0x7FF8B84086B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 10:03:44.205844 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 06744
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 10:03:44.205387 [08016] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B79CC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8462610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8417E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8416AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B84CDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B84CE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B84AA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B84AA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B84ACCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B84ACDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B84AC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B840891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B84086E8: python312.dll!Py_RunMain()
+	0x7FF8B84086B8: python312.dll!Py_Main()
+	0x7FF8B84086B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 10:05:17.101610 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 08012
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 10:05:17.101186 [05364] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B25793D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B253C1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B253C1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B253C1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8271990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8271990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8272610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8227E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8226AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B82DDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B82DE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B82BA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B82BA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B82BCCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B82BCDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B82BC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B821891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B82186E8: python312.dll!Py_RunMain()
+	0x7FF8B82186B8: python312.dll!Py_Main()
+	0x7FF8B82186B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 10:08:00.474579 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 06688
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 10:08:00.473599 [06108] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B79CC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8462610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8417E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8416AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B84CDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B84CE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B84AA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B84AA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B84ACCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B84ACDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B84AC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B840891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B84086E8: python312.dll!Py_RunMain()
+	0x7FF8B84086B8: python312.dll!Py_Main()
+	0x7FF8B84086B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 10:11:16.675963 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 02528
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 10:11:16.675417 [07816] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B79CC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8462610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8417E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8416AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B84CDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B84CE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B84AA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B84AA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B84ACCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B84ACDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B84AC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B840891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B84086E8: python312.dll!Py_RunMain()
+	0x7FF8B84086B8: python312.dll!Py_Main()
+	0x7FF8B84086B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
+
+**** Log file opened at 2025-12-05 10:15:03.552902 UTC-03:00 (Hora verano Sudamérica Pacífico), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : C:\Users\administrador.DOM_INVERTEC\Desktop\tablas_sap
+Program                   : python
+Process ID                : 01368
+User                      : administrador
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 85 Step 4)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : PENTAQAS
+IP address                : 192.168.1.16
+IPv6 address              : fe80::dbbb:7091:8cfa:9ed0
+Global trace level        : 0
+
+2025-12-05 10:15:03.552370 [06632] >> Info entry
+	throwRfcErrorMsg called at:
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B7A093D0: sapnwrfc.dll!RfcSetAbapObjectByIndex()
+	0x7FF8B79CC1E0: sapnwrfc.dll!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B79CC1E0: _cyrfc.cp312-win_amd64.pyd!RfcInvoke()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8461990: python312.dll!PyObject_Vectorcall()
+	0x7FF8B8462610: python312.dll!PyEval_EvalFrameDefault()
+	0x7FF8B8417E60: python312.dll!PyObject_ClearManagedDict()
+	0x7FF8B8416AB0: python312.dll!PyEval_EvalCode()
+	0x7FF8B84CDF2C: python312.dll!Py_SourceAsString()
+	0x7FF8B84CE874: python312.dll!PyModule_ClearDict()
+	0x7FF8B84AA4D8: python312.dll!PyDict_DelItemString()
+	0x7FF8B84AA30C: python312.dll!PyRun_SimpleFileObject()
+	0x7FF8B84ACCCC: python312.dll!PyRun_AnyFileObject()
+	0x7FF8B84ACDD0: python312.dll!PyEval_MakePendingCalls()
+	0x7FF8B84AC988: python312.dll!PyErr_SetExcFromWindowsErrWithFilenameObjects()
+	0x7FF8B840891C: python312.dll!PyMem_GetAllocator()
+	0x7FF8B84086E8: python312.dll!Py_RunMain()
+	0x7FF8B84086B8: python312.dll!Py_Main()
+	0x7FF8B84086B8: python.exe!Py_Main()
+	0x7FF8D2147AB0: KERNEL32.DLL!BaseThreadInitThunk()
+	0x7FF8D411A8A0: ntdll.dll!RtlUserThreadStart()
+
