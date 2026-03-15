@@ -1,7 +1,10 @@
 import json
 from sqlalchemy import text
 from db.db_connection import get_engine
+import os
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 
 # claves primarias SAP por tabla
 PRIMARY_KEYS = {
@@ -79,7 +82,7 @@ def run_merges():
 
     engine = get_engine()
 
-    with open("config.json", "r") as f:
+    with open(CONFIG_PATH, "r") as f:
         config = json.load(f)
 
     tables = config["tables"]
@@ -98,10 +101,8 @@ def run_merges():
 
             sql = build_merge(source, target, table_fields)
 
-            # ejecuta merge
             conn.execute(text(sql))
 
-            # limpia staging
             conn.execute(text(f"TRUNCATE TABLE stg_{target}"))
 
             print(f"Staging stg_{target} limpiada")

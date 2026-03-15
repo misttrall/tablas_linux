@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# SAP traces
+*.trc
+
+# Config
+config.json
+.env
+
+# Wheels
+*.whl
+
+# Virtualenv
+venv/
