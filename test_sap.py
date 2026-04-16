@@ -2,12 +2,12 @@ from pyrfc import Connection
 
 conn= Connection(
 
-    user="aramirez",
-    passwd="Invertec.26",
-    ashost="192.168.0.9",
-    sysnr="00",
-    client="300",
-    lang="ES"
+    user="XXXX",
+    passwd="XXXXX",
+    ashost="192.168.X.X",
+    sysnr="XX",
+    client="XXX",
+    lang="XX"
 )
 
 print("Conectado a SAP")
