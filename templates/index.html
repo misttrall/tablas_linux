@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>DataHub Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="/static/app.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<h1>📊 DataHub - ETL Dashboard</h1>
+
+<div class="grid">
+
+    <div class="card">
+        <button onclick="runETL()">🚀 Ejecutar ETL</button>
+    </div>
+
+    <div class="card">
+        <h3>KPIs</h3>
+        <p>Registros: <span id="kpiRecords">0</span></p>
+        <p>Errores: <span id="kpiErrors">0</span></p>
+        <p>Tiempo: <span id="kpiTime">0s</span></p>
+    </div>
+
+    <div class="card">
+        <canvas id="chart"></canvas>
+    </div>
+
+    <div class="card">
+        <h3>Logs ETL</h3>
+        <pre id="logs"></pre>
+    </div>
+
+    <div class="card">
+        <h3>Export</h3>
+        <button onclick="exportExcel()">📄 Excel</button>
+        <button onclick="exportPDF()">📄 PDF</button>
+    </div>
+
+    <div class="card">
+        <h3>Tabla Mock Data</h3>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Stock</th>
+                    <th>Ventas</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody id="table"></tbody>
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>

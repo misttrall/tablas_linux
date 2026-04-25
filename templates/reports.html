@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Report Center</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<h1>📊 Report Center</h1>
+
+<div class="card">
+    <button onclick="generateReport()">📄 Generar nuevo reporte</button>
+</div>
+
+<div class="card">
+    <h3>Último reporte</h3>
+    <p id="reportInfo">Sin reportes generados</p>
+</div>
+
+<div class="card">
+    <h3>Logs de generación</h3>
+    <pre id="logs"></pre>
+</div>
+
+<div class="card">
+    <h3>Archivo generado</h3>
+    <p id="file"></p>
+</div>
+
+<script src="/static/reports.js"></script>
+
+</body>
+</html>
