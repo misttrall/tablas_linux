@@ -23,11 +23,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { DailyMetrics } from "@/lib/types";
 
 interface MetricsChartsProps {
-  data: DailyMetrics[];
+  dailyMetrics: DailyMetrics[];
 }
 
-export function MetricsCharts({ data }: MetricsChartsProps) {
-  const formattedData = data.map((d) => ({
+export function MetricsCharts({ dailyMetrics }: MetricsChartsProps) {
+  const formattedData = dailyMetrics.map((d) => ({
     ...d,
     date: new Date(d.date).toLocaleDateString("es-ES", {
       day: "2-digit",

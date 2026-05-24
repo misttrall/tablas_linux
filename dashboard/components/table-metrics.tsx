@@ -43,7 +43,7 @@ const statusConfig = {
   },
 };
 
-export function TableMetricsComponent({ tables }: TableMetricsProps) {
+export function TableMetrics({ tables }: TableMetricsProps) {
   const totalRecords = tables.reduce((acc, t) => acc + t.recordsLoaded, 0);
   const totalTime = tables.reduce((acc, t) => acc + t.executionTime, 0);
 

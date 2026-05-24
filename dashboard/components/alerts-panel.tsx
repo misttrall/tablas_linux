@@ -16,8 +16,8 @@ import { getRelativeTime } from "@/lib/utils";
 
 interface AlertsPanelProps {
   alerts: Alert[];
-  onDismiss: (id: string) => void;
-  onMarkAsRead: (id: string) => void;
+  onDismiss?: (id: string) => void;
+  onMarkAsRead?: (id: string) => void;
 }
 
 const alertConfig = {
@@ -80,7 +80,7 @@ export function AlertsPanel({ alerts, onDismiss, onMarkAsRead }: AlertsPanelProp
                     className={`p-3 rounded-lg border ${config.bg} ${
                       !alert.read ? "ring-2 ring-offset-2 ring-offset-background" : ""
                     }`}
-                    onClick={() => !alert.read && onMarkAsRead(alert.id)}
+                    onClick={() => !alert.read && onMarkAsRead?.(alert.id)}
                   >
                     <div className="flex items-start gap-3">
                       <Icon className={`h-5 w-5 mt-0.5 ${config.color}`} />
@@ -95,7 +95,7 @@ export function AlertsPanel({ alerts, onDismiss, onMarkAsRead }: AlertsPanelProp
                             className="h-6 w-6 shrink-0"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onDismiss(alert.id);
+                              onDismiss?.(alert.id);
                             }}
                           >
                             <X className="h-3 w-3" />

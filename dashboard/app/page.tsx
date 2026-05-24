@@ -1,63 +1,98 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DashboardHeader } from "@/components/dashboard-header";
+import { StatusPanel } from "@/components/status-panel";
+import { StatsCards } from "@/components/stats-cards";
+import { ExecutionHistory } from "@/components/execution-history";
+import { TableMetrics } from "@/components/table-metrics";
+import { AlertsPanel } from "@/components/alerts-panel";
+import { MetricsCharts } from "@/components/metrics-charts";
+import { ErrorsList } from "@/components/errors-list";
+import {
+  mockETLState,
+  mockExecutions,
+  mockTableMetrics,
+  mockAlerts,
+  mockDailyMetrics,
+  mockErrors,
+  mockStats,
+} from "@/lib/mock-data";
+
+export default function Dashboard() {
+  const [currentState, setCurrentState] = useState(mockETLState);
+  const [isTriggering, setIsTriggering] = useState(false);
+
+  const handleTriggerETL = async () => {
+    if (currentState.status === "running" || isTriggering) {
+      return;
+    }
+
+    setIsTriggering(true);
+
+    // Simulate API call to trigger ETL
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    // Update state to running (in real implementation, this comes from API)
+    setCurrentState({
+      ...currentState,
+      status: "running",
+      currentStep: "Extrayendo datos de SAP...",
+      progress: 0,
+      startTime: new Date().toISOString(),
+      triggeredBy: "manual",
+      isLocked: true,
+    });
+
+    setIsTriggering(false);
+  };
+
+  const activeAlerts = mockAlerts.filter((a) => !a.read);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+    <div className="min-h-screen flex flex-col">
+      <DashboardHeader alertCount={activeAlerts.length} />
+
+      <main className="flex-1 container mx-auto px-4 py-6 max-w-7xl">
+        <div className="flex flex-col gap-6">
+          {/* Status Panel - Hero section */}
+          <StatusPanel
+            state={currentState}
+            onTriggerETL={handleTriggerETL}
+          />
+
+          {/* Stats Overview */}
+          <StatsCards stats={mockStats} />
+
+          {/* Alerts Section - Show when there are active alerts */}
+          {activeAlerts.length > 0 && <AlertsPanel alerts={activeAlerts} />}
+
+          {/* Main Content Tabs */}
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+              <TabsTrigger value="overview">Resumen</TabsTrigger>
+              <TabsTrigger value="tables">Tablas</TabsTrigger>
+              <TabsTrigger value="history">Historial</TabsTrigger>
+              <TabsTrigger value="errors">Errores</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="mt-6">
+              <MetricsCharts dailyMetrics={mockDailyMetrics} />
+            </TabsContent>
+
+            <TabsContent value="tables" className="mt-6">
+              <TableMetrics tables={mockTableMetrics} />
+            </TabsContent>
+
+            <TabsContent value="history" className="mt-6">
+              <ExecutionHistory executions={mockExecutions} />
+            </TabsContent>
+
+            <TabsContent value="errors" className="mt-6">
+              <ErrorsList errors={mockErrors} />
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>
