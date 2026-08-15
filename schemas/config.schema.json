@@ -1,0 +1,196 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://etl.example/schemas/config.schema.json",
+  "title": "Config ETL",
+  "description": "Contrato del config.json del motor ETL. Valida la estructura general; las claves de negocio por cliente se mantienen permisivas.",
+  "type": "object",
+  "required": ["source", "database", "tables", "fields"],
+  "properties": {
+    "environment": {
+      "type": "string",
+      "enum": ["qa", "prd"]
+    },
+    "guard": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "large_tables": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["sap", "csv", "http"]
+        },
+        "config": { "type": "object" }
+      },
+      "additionalProperties": true
+    },
+    "sap": {
+      "type": "object",
+      "description": "Formato alternativo (legacy): fuente SAP directa en config['sap'].",
+      "additionalProperties": true
+    },
+    "database": {
+      "type": "object",
+      "required": ["dialect"],
+      "properties": {
+        "dialect": {
+          "type": "string",
+          "enum": ["mssql", "sqlite", "postgresql", "mysql"]
+        },
+        "server": { "type": "string" },
+        "database": { "type": "string" },
+        "user": { "type": "string" },
+        "password": { "type": "string" },
+        "port": { "type": "integer" },
+        "driver": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "target"],
+        "properties": {
+          "source": { "type": "string" },
+          "target": { "type": "string" },
+          "keys": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "load_mode": { "type": "string", "enum": ["range"] },
+          "range": {
+            "type": "object",
+            "properties": {
+              "key": { "type": "string" },
+              "prefixes": { "type": "array", "items": { "type": "string" } },
+              "sentinel": { "type": "string" }
+            },
+            "additionalProperties": true
+          },
+          "incremental": {
+            "type": "object",
+            "properties": { "field": { "type": "string" } },
+            "additionalProperties": true
+          },
+          "filters": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "fields": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "derived": {
+      "description": "Visiones derivadas: un objeto (única visión, formato simple) o una lista (múltiples visiones).",
+      "oneOf": [
+        { "$ref": "#/definitions/derived_view" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/definitions/derived_view" }
+        }
+      ]
+    }
+  },
+  "additionalProperties": true,
+  "definitions": {
+    "derived_view": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "text_lang": { "type": "string" },
+        "keys": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["as"],
+            "anyOf": [
+              { "required": ["source"] },
+              { "required": ["compute"] }
+            ],
+            "properties": {
+              "as": { "type": "string" },
+              "source": { "type": "string" },
+              "compute": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "dominio": {
+          "type": "object",
+          "properties": {
+            "registry_table": { "type": "string" },
+            "registry_columns": { "type": "object" },
+            "filters": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["field"],
+                "properties": {
+                  "field": { "type": "string" },
+                  "op": { "type": "string" },
+                  "values": {},
+                  "value": {},
+                  "in": { "type": "array", "items": { "type": "string" } }
+                },
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "precio": { "type": "object" },
+        "valor": { "type": "object" },
+        "area": { "type": "object" },
+        "stock_minimo": { "type": "object" },
+        "alerts": { "type": "object" },
+        "inventory": {
+          "type": "object",
+          "properties": {
+            "filters": {
+              "type": "object",
+              "properties": {
+                "centro": { "type": "string" },
+                "almacen": { "type": "string" },
+                "area": { "type": "string" }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": true
+        },
+        "excel": {
+          "type": "object",
+          "properties": {
+            "path": { "type": "string" },
+            "sheet": { "type": "string" },
+            "alerts_sheet": { "type": "string" },
+            "columns": { "type": "array", "items": { "type": "object" } }
+          },
+          "additionalProperties": true
+        },
+        "sources": { "type": "object" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

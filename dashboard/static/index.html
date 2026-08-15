@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ETL Dashboard</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #f4f6f8; color: #1a2330; }
+    header { background: #1a2330; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 20px; }
+    nav { display: flex; gap: 4px; }
+    nav a { color: #cbd5e1; text-decoration: none; padding: 8px 16px; border-radius: 6px 6px 0 0; font-size: 14px; }
+    nav a.active { background: #f4f6f8; color: #1a2330; font-weight: 600; }
+    main { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+    .cards { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .card { flex: 1; min-width: 160px; background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    .card .label { color: #64748b; font-size: 12px; text-transform: uppercase; }
+    .card .value { font-size: 24px; font-weight: 600; margin-top: 4px; }
+    .ok { color: #15803d; }
+    .failed { color: #b91c1c; }
+    .running { color: #b45309; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+    th { background: #eef2f6; }
+    h2 { font-size: 16px; margin: 24px 0 8px; }
+    .badge { padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+    select, input[type=text] { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: #fff; }
+    .check { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+    .btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; background: #2563eb; color: #fff; }
+    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    .btn.sync { background: #15803d; }
+    tr.low td { background: #fef2f2; }
+    .pager { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 14px; color: #475569; }
+    .pager button { padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; cursor: pointer; }
+    .pager button:disabled { color: #94a3b8; cursor: not-allowed; }
+    #syncStatus { font-size: 13px; color: #64748b; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ETL Dashboard</h1>
+    <nav>
+      <a href="#etl" id="tabLinkEtl">ETL</a>
+      <a href="#inventario" id="tabLinkInventario">Inventario</a>
+    </nav>
+  </header>
+  <main>
+
+    <section id="tab-etl" class="tab active">
+      <div class="cards">
+        <div class="card"><div class="label">Estado última corrida</div><div class="value" id="lastStatus">-</div></div>
+        <div class="card"><div class="label">Tablas ok</div><div class="value" id="tablesOk">-</div></div>
+        <div class="card"><div class="label">Filas cargadas</div><div class="value" id="totalRows">-</div></div>
+      </div>
+      <h2>Últimas corridas</h2>
+      <table id="executions">
+        <thead><tr><th>#</th><th>Estado</th><th>Inicio</th><th>Fin</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <h2>Progreso por tabla</h2>
+      <table id="progress">
+        <thead><tr><th>Tabla</th><th>Estado</th><th>Filas</th><th>Delta</th><th>Actualizado</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <h2>Extracción en vivo</h2>
+      <div class="cards">
+        <div class="card"><div class="label">Fase</div><div class="value" id="livePhase">idle</div></div>
+        <div class="card"><div class="label">Tabla</div><div class="value" id="liveTable">-</div></div>
+        <div class="card"><div class="label">Filas leídas</div><div class="value" id="liveRows">0</div></div>
+      </div>
+      <div id="liveBarWrap" style="display:none; background:#fff; border-radius:8px; padding:12px; box-shadow:0 1px 3px rgba(0,0,0,.1);">
+        <div style="font-size:13px; color:#64748b; margin-bottom:6px;" id="liveChunkLabel">chunk 0/0</div>
+        <div style="background:#eef2f6; border-radius:999px; height:10px; overflow:hidden;">
+          <div id="liveBar" style="background:#2563eb; height:100%; width:0%; transition:width .4s;"></div>
+        </div>
+      </div>
+      <h2>Detalle por corrida</h2>
+      <select id="runSelect" onchange="loadRunDetail()"></select>
+      <table id="runDetail" style="margin-top:8px;">
+        <thead><tr><th>Tabla</th><th>Estado</th><th>Chunks</th><th>Filas</th><th>Duración (s)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="tab-inventario" class="tab">
+      <div class="cards">
+        <div class="card"><div class="label">Materiales</div><div class="value" id="invMaterials">-</div></div>
+        <div class="card"><div class="label">Valor total</div><div class="value" id="invValue">-</div></div>
+        <div class="card"><div class="label">Bajo mínimo</div><div class="value" id="invAlerts">-</div></div>
+        <div class="card"><div class="label">Valor en riesgo</div><div class="value" id="invRisk">-</div></div>
+      </div>
+      <div class="toolbar">
+        <select id="fCentro" onchange="inventoryPage(0)"><option value="">Centro: todos</option></select>
+        <select id="fAlmacen" onchange="inventoryPage(0)"><option value="">Almacén: todos</option></select>
+        <select id="fArea" onchange="inventoryPage(0)"><option value="">Área: todas</option></select>
+        <input type="text" id="fSearch" placeholder="Buscar (material, descripción...)" oninput="scheduleSearch()">
+        <label class="check"><input type="checkbox" id="fLowOnly" onchange="inventoryPage(0)"> Solo bajo stock</label>
+        <button class="btn sync" id="btnSync" onclick="syncNow()">Sincronizar</button>
+      </div>
+      <div id="syncStatus">-</div>
+      <table id="inventory">
+        <thead><tr><th>Material</th><th>Descripción</th><th>Centro</th><th>Almacén</th><th>Stock</th><th>Mínimo</th><th>Área</th><th>Valor</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="pager">
+        <button id="btnPrev" onclick="inventoryPage(invPage - 1)">‹ Anterior</button>
+        <span id="pageInfo">-</span>
+        <button id="btnNext" onclick="inventoryPage(invPage + 1)">Siguiente ›</button>
+      </div>
+    </section>
+
+  </main>
+  <script>
+    const LIMIT = 100;
+    let invPage = 0;
+    let searchTimer = null;
+
+    function tabFromHash() {
+      const hash = (location.hash || '#etl').replace('#', '');
+      document.getElementById('tab-etl').classList.toggle('active', hash === 'etl');
+      document.getElementById('tab-inventario').classList.toggle('active', hash === 'inventario');
+      document.getElementById('tabLinkEtl').classList.toggle('active', hash === 'etl');
+      document.getElementById('tabLinkInventario').classList.toggle('active', hash === 'inventario');
+    }
+    window.addEventListener('hashchange', tabFromHash);
+
+    async function refresh() {
+      const res = await fetch('/api/dashboard');
+      const data = await res.json();
+
+      const last = data.last_execution;
+      const st = document.getElementById('lastStatus');
+      if (last.status) {
+        st.textContent = last.status;
+        st.className = 'value ' + last.status;
+      } else {
+        st.textContent = 'sin corridas';
+      }
+
+      const ok = data.progress.filter(p => p.status === 'ok').length;
+      document.getElementById('tablesOk').textContent = ok + ' / ' + data.progress.length;
+      document.getElementById('totalRows').textContent =
+        data.progress.reduce((s, p) => s + (p.rows_loaded || 0), 0);
+
+      const eb = document.querySelector('#executions tbody');
+      eb.innerHTML = data.executions.map(e =>
+        '<tr><td>' + e.id + '</td><td><span class="badge ' + e.status + '">' + e.status +
+        '</span></td><td>' + e.start_time + '</td><td>' + e.end_time + '</td></tr>').join('');
+
+      const pb = document.querySelector('#progress tbody');
+      pb.innerHTML = data.progress.map(p =>
+        '<tr><td>' + p.table_name + '</td><td><span class="badge ' + p.status + '">' + p.status +
+        '</span></td><td>' + p.rows_loaded + '</td><td>' + p.last_delta_value +
+        '</td><td>' + p.updated_at + '</td></tr>').join('');
+
+      const sel = document.getElementById('runSelect');
+      const prev = sel.value;
+      sel.innerHTML = data.executions.map(e =>
+        '<option value="' + e.id + '">#' + e.id + ' ' + e.status + ' (' + e.start_time + ')</option>').join('');
+      if (prev && sel.querySelector('option[value="' + prev + '"]')) { sel.value = prev; }
+      if (!sel.value && sel.options.length) { sel.value = sel.options[0].value; }
+      if (sel.options.length) { loadRunDetail(); }
+    }
+
+    async function loadRunDetail() {
+      const runId = document.getElementById('runSelect').value;
+      if (!runId) return;
+      const res = await fetch('/api/tables?run_id=' + runId);
+      const rows = await res.json();
+      const tb = document.querySelector('#runDetail tbody');
+      tb.innerHTML = rows.map(r =>
+        '<tr><td>' + r.table_name + '</td><td><span class="badge ' + r.status + '">' + r.status +
+        '</span></td><td>' + (r.chunks_ok || 0) + '/' + (r.chunks_total || 0) +
+        '</td><td>' + (r.rows_extracted || 0) + '</td><td>' + (r.duration_s || 0) + '</td></tr>').join('');
+    }
+
+    async function refreshLive() {
+      const res = await fetch('/api/live');
+      const l = await res.json();
+      document.getElementById('livePhase').textContent = l.phase;
+      document.getElementById('liveTable').textContent = l.table || '-';
+      document.getElementById('liveRows').textContent = l.rows_so_far || 0;
+      const wrap = document.getElementById('liveBarWrap');
+      if (l.running && l.chunk_total > 0) {
+        wrap.style.display = 'block';
+        document.getElementById('liveChunkLabel').textContent =
+          'chunk ' + l.chunk_index + '/' + l.chunk_total + ' · ' + (l.elapsed_s || 0) + ' s';
+        document.getElementById('liveBar').style.width =
+          Math.round((l.chunk_index / l.chunk_total) * 100) + '%';
+      } else {
+        wrap.style.display = 'none';
+      }
+
+      const btn = document.getElementById('btnSync');
+      const status = document.getElementById('syncStatus');
+      if (l.running) {
+        btn.disabled = true;
+        status.textContent = 'Sincronizando… fase ' + l.phase +
+          (l.table ? ' · ' + l.table : '') + ' · ' + (l.rows_so_far || 0) + ' filas';
+      } else if (btn.disabled) {
+        btn.disabled = false;
+        const ex = await fetch('/api/executions?last=1').then(r => r.json());
+        const last = ex && ex[0];
+        const recent = last && last.end_time &&
+          (new Date() - new Date(last.end_time.replace(' ', 'T'))) < 300000;
+        if (recent && last.status === 'failed') {
+          status.textContent = 'La sincronización #' + last.id + ' falló. Revisa logs/etl_sync.log y vuelve a intentar.';
+        } else {
+          status.textContent = 'Sincronización #' + (last ? last.id : '') +
+            ' ' + (last ? last.status : '') + ' a las ' + new Date().toLocaleTimeString('es-CL');
+        }
+        loadInventory();
+        loadItems();
+        refresh();
+      }
+    }
+
+    async function loadInventory() {
+      const res = await fetch('/api/inventory');
+      const inv = await res.json();
+      if (!inv.available) {
+        document.getElementById('invMaterials').textContent = 'n/d';
+        document.getElementById('invValue').textContent = 'n/d';
+        document.getElementById('invAlerts').textContent = 'n/d';
+        document.getElementById('invRisk').textContent = 'n/d';
+        return;
+      }
+      document.getElementById('invMaterials').textContent = inv.total_materials;
+      document.getElementById('invValue').textContent = formatMoney(inv.total_value);
+      document.getElementById('invAlerts').textContent = inv.alerts_count;
+      document.getElementById('invRisk').textContent = formatMoney(inv.risk_value);
+    }
+
+    function setFilterOptions(id, values) {
+      const sel = document.getElementById(id);
+      const keep = sel.value;
+      sel.innerHTML = '<option value="">' +
+        (id === 'fArea' ? 'Área: todas' : id === 'fAlmacen' ? 'Almacén: todos' : 'Centro: todos') +
+        '</option>' +
+        values.map(v => '<option value="' + v + '">' + v + '</option>').join('');
+      if (keep && values.indexOf(keep) >= 0) { sel.value = keep; }
+    }
+
+    async function loadFilters() {
+      const res = await fetch('/api/inventory/filters');
+      const data = await res.json();
+      if (!data.available) return;
+      setFilterOptions('fCentro', data.centro || []);
+      setFilterOptions('fAlmacen', data.almacen || []);
+      setFilterOptions('fArea', data.area || []);
+    }
+
+    function invQuery() {
+      const p = new URLSearchParams();
+      const c = document.getElementById('fCentro').value;
+      const a = document.getElementById('fAlmacen').value;
+      const ar = document.getElementById('fArea').value;
+      const q = document.getElementById('fSearch').value.trim();
+      const lo = document.getElementById('fLowOnly').checked;
+      if (c) p.set('centro', c);
+      if (a) p.set('almacen', a);
+      if (ar) p.set('area', ar);
+      if (q) p.set('q', q);
+      if (lo) p.set('low_only', 'true');
+      p.set('limit', LIMIT);
+      p.set('offset', invPage * LIMIT);
+      return p;
+    }
+
+    async function loadItems() {
+      const res = await fetch('/api/inventory/items?' + invQuery().toString());
+      const data = await res.json();
+      if (!data.available) {
+        document.querySelector('#inventory tbody').innerHTML =
+          '<tr><td colspan="8">Sin datos de inventario derivado</td></tr>';
+        document.getElementById('pageInfo').textContent = '-';
+        return;
+      }
+      const tb = document.querySelector('#inventory tbody');
+      tb.innerHTML = data.rows.map(r => {
+        const qty = r.StockLibre !== '' && r.StockLibre !== null ? Number(r.StockLibre) : NaN;
+        const min = r.stock_minimo !== '' && r.stock_minimo !== null ? Number(r.stock_minimo) : NaN;
+        const low = !isNaN(qty) && !isNaN(min) && qty < min;
+        return '<tr' + (low ? ' class="low"' : '') + '><td>' +
+          (r.MATNR || r.Columna1 || '') + '</td><td>' +
+          (r.Descripcion || r.DescripcionMaterial || '') + '</td><td>' +
+          (r.Centro || '') + '</td><td>' + (r.AlmacenDesc || r.Almacen || r.NumeroAlmacen || '') +
+          '</td><td>' + (r.StockLibre !== '' ? r.StockLibre : r.Stock) + '</td><td>' +
+          (r.stock_minimo !== '' ? r.stock_minimo : '') + '</td><td>' +
+          (r.Area || '') + '</td><td>' + formatMoney(Number(r.ValorTotal) || 0) + '</td></tr>';
+      }).join('');
+
+      const lo = document.getElementById('fLowOnly').checked;
+      document.getElementById('pageInfo').textContent =
+        'Página ' + (invPage + 1) + ' · ' + data.total + ' resultados' +
+        (lo ? ' (bajo stock: ' + data.low_only_count + ')' : '');
+      document.getElementById('btnPrev').disabled = invPage === 0;
+      document.getElementById('btnNext').disabled = invPage * LIMIT + data.rows.length >= data.total;
+    }
+
+    function inventoryPage(page) {
+      if (page < 0) return;
+      invPage = page;
+      loadItems();
+    }
+
+    function scheduleSearch() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => inventoryPage(0), 400);
+    }
+
+    async function syncNow() {
+      const btn = document.getElementById('btnSync');
+      btn.disabled = true;
+      document.getElementById('syncStatus').textContent = 'Disparando ETL…';
+      const res = await fetch('/api/etl/trigger', { method: 'POST' });
+      const data = await res.json();
+      if (!data.ok) {
+        document.getElementById('syncStatus').textContent =
+          (data.reason === 'already_running')
+            ? 'Ya hay una corrida en curso (run #' + (data.run_id || '?') + ').'
+            : 'No se pudo disparar el ETL: ' + (data.reason || 'desconocido');
+        btn.disabled = false;
+      }
+    }
+
+    function formatMoney(v) {
+      return (typeof v === 'number' && !isNaN(v)) ? '$' + v.toLocaleString('es-CL', {minimumFractionDigits: 2}) : '-';
+    }
+
+    tabFromHash();
+    refresh();
+    refreshLive();
+    loadInventory();
+    loadFilters();
+    loadItems();
+    setInterval(refresh, 30000);
+    setInterval(refreshLive, 2000);
+    setInterval(function () { loadInventory(); loadFilters(); loadItems(); }, 60000);
+  </script>
+</body>
+</html>

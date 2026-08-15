@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tablas-etl"
+version = "0.3.0"
+description = "Motor ETL multi-ERP y multi-base de datos (SQL Server, PostgreSQL, MySQL, SQLite)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "pandas>=2.0",
+    "openpyxl",
+    "sqlalchemy>=2.0",
+    "pyodbc",
+    "psycopg2-binary",
+    "pymysql",
+    "pyrfc",
+    "python-dotenv",
+    "requests",
+    "fastapi",
+    "uvicorn",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+]
+
+[project.scripts]
+etl = "cli:main"
+
+[tool.setuptools]
+packages = ["db", "db.sinks", "sources", "sources.sap", "sources.generic", "utils", "dashboard", "derived"]
+py-modules = ["cli"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]

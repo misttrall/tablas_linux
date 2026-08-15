@@ -1,108 +1,41 @@
-import json
-from sqlalchemy import text
 from db.db_connection import get_engine
-import os
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
-
-# claves primarias SAP por tabla
-PRIMARY_KEYS = {
-    "MARA": ["MATNR"],
-    "MAKT": ["MANDT", "MATNR", "SPRAS"],
-    "MARD": ["MANDT", "MATNR", "WERKS", "LGORT"],
-    "MBEW": ["MATNR", "BWKEY"],
-    "T001L": ["MANDT", "WERKS", "LGORT"]
-}
+from db.sinks import get_sink
+from utils.config_loader import load_config
 
 
-def build_merge(table, target, fields):
-    """
-    Construye un SQL MERGE seguro:
-    - Evita insertar duplicados de staging
-    - Actualiza registros existentes
-    - Inserta solo los nuevos
-    """
-    keys = PRIMARY_KEYS[table]
+def resolve_keys(table_config, source):
+    keys = table_config.get("keys")
+    if not keys:
+        raise ValueError(f"No se definieron claves primarias para la tabla {source} (campo 'keys' en config)")
+    return keys
 
-    # Condición ON para el MERGE
-    on_clause = " AND ".join([f"target.{k} = src.{k}" for k in keys])
 
-    # Campos a actualizar (excluyendo la clave primaria)
-    update_fields = [f for f in fields if f not in keys]
-    update_clause = ",\n        ".join([f"{f} = src.{f}" for f in update_fields])
+def run_merges(engine=None, sink=None, tables=None, config=None):
+    """Ejecuta los MERGE por tabla. Por defecto usa config.json y todas sus tablas."""
 
-    insert_fields = ", ".join(fields)
-    insert_values = ", ".join([f"src.{f}" for f in fields])
+    if config is None:
+        config = load_config()
+    if engine is None:
+        engine = get_engine(config)
+    if sink is None:
+        sink = get_sink(engine)
 
-    # SQL MERGE con CTE que elimina duplicados en staging
-    merge_sql = f"""
-    MERGE {target} AS target
-    USING (
-        SELECT *
-        FROM (
-            SELECT *,
-                ROW_NUMBER() OVER (
-                    PARTITION BY {",".join(keys)}
-                    ORDER BY {",".join(keys)}
-                ) AS rn
-            FROM stg_{table}_Data
-        ) t
-        WHERE rn = 1
-    ) AS src
-    ON {on_clause}
-    WHEN MATCHED THEN
-        UPDATE SET
-        {update_clause}
-    WHEN NOT MATCHED THEN
-        INSERT ({insert_fields})
-        VALUES ({insert_values});
-    """
-
-    return merge_sql
-
-def update_progress(conn, table, rows, status):
-
-    conn.execute(text("""
-        DELETE FROM etl_progress WHERE table_name = :table
-    """), {"table": table})
-
-    conn.execute(text("""
-        INSERT INTO etl_progress
-        (table_name, rows_loaded, status, updated_at)
-        VALUES
-        (:table, :rows, :status, GETDATE())
-    """), {
-        "table": table,
-        "rows": rows,
-        "status": status
-    })
-
-def run_merges():
-
-    engine = get_engine()
-
-    with open(CONFIG_PATH, "r") as f:
-        config = json.load(f)
-
-    tables = config["tables"]
+    if tables is None:
+        tables = config["tables"]
     fields = config["fields"]
 
-    with engine.begin() as conn:
+    for t in tables:
 
-        for t in tables:
+        source = t["source"]
+        target = t["target"]
+        table_fields = fields[source]
+        keys = resolve_keys(t, source)
 
-            source = t["source"]
-            target = t["target"]
+        staging = f"stg_{target}"
 
-            table_fields = fields[source]
+        print(f"Ejecutando MERGE {source}...")
 
-            print(f"Ejecutando MERGE {source}...")
+        sink.ensure_target(target, table_fields, keys)
+        sink.merge(target, staging, keys, table_fields)
 
-            sql = build_merge(source, target, table_fields)
-
-            conn.execute(text(sql))
-
-            conn.execute(text(f"TRUNCATE TABLE stg_{target}"))
-
-            print(f"Staging stg_{target} limpiada")
+        print(f"Staging {staging} limpiada")

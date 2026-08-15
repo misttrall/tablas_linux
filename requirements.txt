@@ -1,6 +1,10 @@
-psycopg2-binary
 pandas
-sqlalchemy
+openpyxl
+sqlalchemy>=2.0
+jsonschema
 pyodbc
+psycopg2-binary
+pymysql
 pyrfc
 python-dotenv
+requests

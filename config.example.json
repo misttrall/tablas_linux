@@ -1,0 +1,134 @@
+{
+  "environment": "qa",
+  "guard": {
+    "large_tables": ["MARA", "MARD", "MBEW", "MAKT"]
+  },
+  "source": {
+    "type": "sap",
+    "config": {
+      "user": "SAP_USER",
+      "passwd": "SAP_PASSWORD",
+      "ashost": "192.168.x.x",
+      "sysnr": "00",
+      "client": "300",
+      "lang": "ES"
+    }
+  },
+  "database": {
+    "dialect": "mssql",
+    "server": "192.168.x.x",
+    "database": "base_datos_destino",
+    "user": "DB_USER",
+    "password": "DB_PASSWORD",
+    "port": 1433,
+    "driver": "ODBC+Driver+18+for+SQL+Server"
+  },
+  "tables": [
+    {
+      "source": "MARA",
+      "target": "Mara_Data",
+      "keys": ["MATNR"],
+      "load_mode": "range",
+      "range": {
+        "key": "MATNR",
+        "sentinel": "~~~~~~~~~~~~~~~~~~"
+      }
+    },
+    {
+      "source": "MARD",
+      "target": "Mard_Data",
+      "keys": ["MANDT", "MATNR", "WERKS", "LGORT"],
+      "load_mode": "range",
+      "range": {
+        "key": "MATNR",
+        "sentinel": "~~~~~~~~~~~~~~~~~~"
+      }
+    },
+    {
+      "source": "MBEW",
+      "target": "Mbew_Data",
+      "keys": ["MATNR", "BWKEY"],
+      "load_mode": "range",
+      "range": {
+        "key": "MATNR",
+        "sentinel": "~~~~~~~~~~~~~~~~~~"
+      }
+    },
+    {
+      "source": "MAKT",
+      "target": "Makt_Data",
+      "keys": ["MANDT", "MATNR", "SPRAS"],
+      "load_mode": "range",
+      "range": {
+        "key": "MATNR",
+        "sentinel": "~~~~~~~~~~~~~~~~~~"
+      }
+    },
+    {
+      "source": "T001L",
+      "target": "T001L_Data",
+      "keys": ["WERKS", "LGORT"]
+    }
+  ],
+  "fields": {
+    "MARA": ["MATNR", "MTART", "MATKL", "XCHPF", "MEINS"],
+    "MARD": ["MANDT", "MATNR", "WERKS", "LGORT", "LABST", "LMINB"],
+    "MBEW": ["MATNR", "BWKEY", "LBKUM", "SALK3", "VPRSV", "STPRS", "VERPR"],
+    "MAKT": ["MANDT", "MATNR", "SPRAS", "MAKTX", "MAKTG"],
+    "T001L": ["WERKS", "LGORT", "LGOBE"]
+  },
+    "derived": {
+      "name": "inv_bodega",
+      "text_lang": "ES",
+      "dominio": {
+        "registry_table": "material_centro_almacen",
+        "registry_columns": {
+          "material": "material",
+          "centro": "centro",
+          "almacen": "almacen"
+        },
+        "filters": [
+          { "field": "MTART", "in": ["ROH", "VERP"] },
+          { "field": "WERKS", "op": "eq", "value": "P01" },
+          { "field": "LGORT", "op": "eq", "value": "1001" }
+        ]
+      },
+      "precio": { "field": "VERPR" },
+      "valor": { "field": "VERPR" },
+      "area": {
+        "reference_table": "stock_minimo",
+        "columns": { "key": "material", "value": "area" }
+      },
+      "stock_minimo": {
+        "reference_table": "stock_minimo",
+        "key_columns": ["material"],
+        "value_column": "stock_minimo"
+      },
+      "keys": ["MATNR", "WERKS", "LGORT"],
+      "inventory": {
+        "filters": {
+          "centro": "Centro",
+          "almacen": "Almacen",
+          "area": "Area"
+        }
+      },
+      "columns": [
+        { "as": "MATNR", "source": "MATNR" },
+        { "as": "Descripcion", "source": "MAKTX" },
+        { "as": "Centro", "source": "WERKS" },
+        { "as": "Almacen", "source": "LGORT" },
+        { "as": "AlmacenDesc", "source": "LGOBE" },
+        { "as": "StockLibre", "source": "LABST" },
+        { "as": "UMB", "source": "MEINS" },
+        { "as": "Precio", "source": "VERPR" },
+        { "as": "ValorTotal", "compute": "LABST * VERPR" },
+        { "as": "Area", "source": "AREA" },
+        { "as": "stock_minimo", "source": "STOCK_MINIMO" }
+      ],
+      "excel": {
+        "path": "output/inventario.xlsx",
+        "sheet": "Stock",
+        "alerts_sheet": "StockBajo"
+      }
+    }
+}

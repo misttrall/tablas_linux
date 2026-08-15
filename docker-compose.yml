@@ -1,0 +1,20 @@
+# Dashboard + CLI en un solo servicio. El ETL contra SAP se dispara con:
+#   docker compose run --rm etl python -m cli bootstrap   (onboarding: config + conectividad + migraciones)
+#   docker compose run --rm etl python -m cli run
+#   docker compose run --rm etl python -m cli reporte
+# El botón "Sincronizar" del dashboard solo funciona donde el contenedor
+# tenga el SDK SAP montado y pyrfc instalado (imagen ligera: no).
+services:
+  etl:
+    build: .
+    image: etl:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./config.json:/opt/etl/config.json:ro
+      - /opt/sap/nwrfcsdk:/opt/sap/nwrfcsdk:ro
+      - ./output:/opt/etl/output
+    ports:
+      - "8000:8000"
+    command: ["python", "-m", "uvicorn", "dashboard.app:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -2,18 +2,35 @@
 __pycache__/
 *.pyc
 
+# Empaquetado
+*.egg-info/
+dist/
+build/
+
+# Tests
+.pytest_cache/
+
 # Logs
 *.log
 
 # SAP traces
 *.trc
 
-# Config
+# Config (secretos)
 config.json
 .env
+
+# Base de datos locales
+*.db
+*.sqlite
+*.sqlite3
+
+# Reportes y archivos generados (contienen datos del cliente)
+output/
 
 # Wheels
 *.whl
 
 # Virtualenv
 venv/
+.venv/

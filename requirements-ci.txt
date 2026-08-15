@@ -1,0 +1,15 @@
+# Dependencias para CI/tests/dashboard. Excluye pyrfc (requiere el SDK de SAP
+# NW RFC para compilar); el run contra SAP usa requirements.txt en el host.
+pandas
+openpyxl
+sqlalchemy>=2.0
+jsonschema
+pyodbc
+psycopg2-binary
+pymysql
+python-dotenv
+requests
+fastapi
+uvicorn
+httpx
+pytest

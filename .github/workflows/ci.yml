@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias de CI
+        run: pip install -r requirements-ci.txt
+
+      - name: Tests unitarios
+        run: python -m pytest -q
+
+      - name: Lint (ruff)
+        run: |
+          pip install ruff
+          ruff check .
