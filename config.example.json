@@ -115,17 +115,17 @@
       }
     },
     "columns": [
-      { "as": "MATNR", "source": "MATNR" },
-      { "as": "Descripcion", "source": "MAKTX" },
-      { "as": "Centro", "source": "WERKS" },
-      { "as": "Almacen", "source": "LGORT" },
-      { "as": "AlmacenDesc", "source": "LGOBE" },
-      { "as": "StockLibre", "source": "LABST" },
-      { "as": "UMB", "source": "MEINS" },
-      { "as": "Precio", "source": "VERPR" },
-      { "as": "ValorTotal", "compute": "LABST * VERPR" },
-      { "as": "Area", "source": "AREA" },
-      { "as": "stock_minimo", "source": "STOCK_MINIMO" }
+      { "as": "MATNR", "source": "MATNR", "label": "Material" },
+      { "as": "Descripcion", "source": "MAKTX", "label": "Descripción" },
+      { "as": "Centro", "source": "WERKS", "label": "Centro" },
+      { "as": "Almacen", "source": "LGORT", "label": "Almacén", "hide": true },
+      { "as": "AlmacenDesc", "source": "LGOBE", "label": "Almacén", "fallback": "Almacen" },
+      { "as": "StockLibre", "source": "LABST", "label": "Stock", "fallback": "Stock" },
+      { "as": "stock_minimo", "source": "STOCK_MINIMO", "label": "Mínimo" },
+      { "as": "Area", "source": "AREA", "label": "Área" },
+      { "as": "ValorTotal", "compute": "LABST * VERPR", "label": "Valor" },
+      { "as": "UMB", "source": "MEINS", "label": "UMB", "hide": true },
+      { "as": "Precio", "source": "VERPR", "label": "Precio", "hide": true }
     ],
     "excel": {
       "path": "output/inventario.xlsx",
@@ -135,8 +135,8 @@
   },
   "dashboard": {
     "title": "Mi Empresa · Novus BI",
-    "logo": "",
-    "color": "#0f4c81",
+    "logo": "/static/novus-logo.png",
+    "color": "#EA7222",
     "footer": "Novus IT · Datos e Inteligencia de Negocios"
   }
 }

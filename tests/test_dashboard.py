@@ -97,9 +97,40 @@ def test_dashboard_aggregate(client):
 def test_index_served(client):
     res = client.get("/", follow_redirects=False)
     assert res.status_code == 307
-    res2 = client.get("/inventario")
+    assert res.headers["location"] == "/panel"
+    res2 = client.get("/derivadas")
     assert res2.status_code == 200
-    assert "ETL Dashboard" in res2.text
+    assert "Invertec BI" in res2.text
+
+
+def test_inventario_redirects_to_derivadas(client):
+    res = client.get("/inventario", follow_redirects=False)
+    assert res.status_code == 307
+    assert res.headers["location"] == "/derivadas"
+
+
+def test_all_pages_have_branding_elements(client):
+    for path in ("/login", "/panel", "/etl", "/derivadas"):
+        res = client.get(path)
+        assert res.status_code == 200, path
+        assert 'id="appTitle"' in res.text, path
+        assert 'id="appLogo"' in res.text, path
+
+
+def test_etl_page_has_sync_controls(client):
+    res = client.get("/etl")
+    assert res.status_code == 200
+    assert "Sincronizar" in res.text
+    assert 'id="btnSync"' in res.text
+
+
+def test_common_js_auto_applies_branding():
+    src = os.path.join(dashboard_app.STATIC_DIR, "common.js")
+    with open(src) as f:
+        js = f.read()
+    assert "renderBranding" in js
+    assert "DOMContentLoaded" in js or "readyState" in js
+    assert "/inventario" not in js
 
 
 def test_tables_detail(client):
@@ -206,6 +237,35 @@ def test_inventory_summary(inventory_client):
     assert data["total_value"] == 88.04
     assert data["alerts_count"] == 2
     assert data["risk_value"] == 78.04
+
+
+def test_inventory_summary_coerces_qty_fields(inventory_client):
+    """Las columnas TEXT (cómo llegan del manifest) deben compararse numéricamente."""
+    engine = dashboard_app.get_engine()
+    with engine.begin() as conn:
+        pd.DataFrame([
+            {"MATNR": "M-A", "Descripcion": "A", "Centro": "IN01", "Almacen": "1014",
+             "StockLibre": "45", "stock_minimo": "9", "ValorTotal": "10.0", "Area": "Taller"},
+            {"MATNR": "M-B", "Descripcion": "B", "Centro": "IN01", "Almacen": "1014",
+             "StockLibre": "3", "stock_minimo": "7", "ValorTotal": "25.0", "Area": "Taller"},
+        ]).to_sql("inv_texto", conn, index=False)
+    cfg_path = os.environ["ETL_CONFIG"]
+    cfg = json.load(open(cfg_path))
+    cfg["derived"] = [
+        cfg["derived"],
+        {"name": "inv_texto", "alerts": {
+            "enabled": True, "min_field": "stock_minimo",
+            "qty_field": "StockLibre", "total_field": "ValorTotal"}},
+    ]
+    json.dump(cfg, open(cfg_path, "w"))
+
+    res = inventory_client.get("/api/derived/inv_texto/summary")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["available"] is True
+    # "45" < "9" en string sería True; numéricamente 45 < 9 es False → solo M-B es alerta.
+    assert data["alerts_count"] == 1
+    assert data["risk_value"] == 25.0
 
 
 def test_inventory_alerts(inventory_client):
@@ -410,6 +470,27 @@ def test_derived_views_endpoint(inventory_client):
     assert data["views"][0]["name"] == "inv_bodega"
     assert data["views"][0]["tab"] == "Inv Bodega"
     assert data["views"][0]["table"] == "inv_bodega"
+    assert data["views"][0]["columns"] == []
+
+
+def test_derived_views_columns_metadata(inventory_client):
+    cfg_path = os.environ["ETL_CONFIG"]
+    cfg = json.load(open(cfg_path))
+    cfg["derived"]["columns"] = [
+        {"as": "MATNR", "source": "MATNR", "label": "Material"},
+        {"as": "Almacen", "source": "LGORT", "hide": True},
+        {"as": "AlmacenDesc", "source": "LGOBE", "fallback": "Almacen"},
+        {"as": "ValorTotal", "compute": "LABST * VERPR", "label": "Valor"},
+    ]
+    json.dump(cfg, open(cfg_path, "w"))
+
+    res = inventory_client.get("/api/derived-views")
+    assert res.status_code == 200
+    cols = res.json()["views"][0]["columns"]
+    assert {"as": "MATNR", "label": "Material", "hidden": False, "fallback": None} in cols
+    assert {"as": "Almacen", "label": "Almacen", "hidden": True, "fallback": None} in cols
+    assert {"as": "AlmacenDesc", "label": "AlmacenDesc", "hidden": False, "fallback": "Almacen"} in cols
+    assert {"as": "ValorTotal", "label": "Valor", "hidden": False, "fallback": None} in cols
 
 
 def test_derivadas_page_served(client):

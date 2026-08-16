@@ -3,18 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vistas · ETL Dashboard</title>
+  <title>Vistas · Invertec BI</title>
+  <link rel="icon" type="image/png" href="/static/novus-mark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/common.css">
 </head>
 <body>
   <header>
-    <img id="appLogo" alt="" style="display:none; height:32px;">
-    <h1 id="appTitle">ETL Dashboard</h1>
+    <img id="appLogo" alt="" style="display:none">
+    <h1 id="appTitle">Invertec BI</h1>
     <div class="userbar" id="userbar"></div>
   </header>
   <nav id="tabs" class="tabs"></nav>
   <main>
     <div id="kpis" class="cards"></div>
+    <div class="toolbar" id="filtersBar" style="display:none">
+      <select id="fCentro"><option value="">Centro: todos</option></select>
+      <select id="fAlmacen"><option value="">Almacén: todos</option></select>
+      <select id="fArea"><option value="">Área: todas</option></select>
+      <input type="text" id="fSearch" placeholder="Buscar…" autocomplete="off">
+      <label class="check"><input type="checkbox" id="fLowOnly"> Solo bajo stock</label>
+    </div>
     <div id="viewBody">
       <div id="viewMessage">Cargando…</div>
     </div>

@@ -333,6 +333,25 @@ def _inventory_filter_columns(view):
     }
 
 
+def _view_columns(view):
+    """Columnas de presentación de una visión derivada (etiqueta, oculta, respaldo).
+
+    Se derivan de `derived.columns` del config; sin columnas declaradas devuelve [].
+    """
+    out = []
+    for c in view.get("columns", []):
+        as_name = c.get("as")
+        if not as_name:
+            continue
+        out.append({
+            "as": as_name,
+            "label": c.get("label") or as_name,
+            "hidden": bool(c.get("hide")),
+            "fallback": c.get("fallback"),
+        })
+    return out
+
+
 def _coerce_numeric(df, fields):
     for f in fields:
         if f in df.columns:
@@ -370,7 +389,7 @@ def _filter_inventory(df, view, centro="", almacen="", area="", low_only=False, 
 def _inventory_summary(df, view):
     cfg = _inventory_alerts_config(view)
     total_field = cfg["total_field"]
-    _coerce_numeric(df, [total_field])
+    _coerce_numeric(df, [total_field, cfg["qty_field"], cfg["min_field"]])
     total_rows = int(len(df))
     row_label = view.get("row_label", "MATNR")
     materials = int(df[row_label].nunique()) if row_label in df.columns else total_rows
@@ -563,7 +582,7 @@ def root(user=Depends(current_user_or_none)):
     if user is None:
         return RedirectResponse(url="/login", status_code=307)
     return RedirectResponse(
-        url="/panel" if user["role"] == "admin" else "/inventario",
+        url="/panel" if user["role"] == "admin" else "/derivadas",
         status_code=307,
     )
 
@@ -573,11 +592,11 @@ def page_login():
     return _page("login.html")
 
 
-@app.get("/inventario", response_class=HTMLResponse, include_in_schema=False)
+@app.get("/inventario", include_in_schema=False)
 def page_inventario(user=Depends(current_user_or_none)):
     if user is None:
         return RedirectResponse(url="/login", status_code=307)
-    return _page("inventario.html")
+    return RedirectResponse(url="/derivadas", status_code=307)
 
 
 @app.get("/etl", response_class=HTMLResponse, include_in_schema=False)
@@ -602,7 +621,8 @@ def page_panel(user=Depends(current_user_or_none)):
 def api_derived_views(user=Depends(require_user)):
     config = load_config(os.environ.get("ETL_CONFIG"))
     views = [{"name": v.get("name", "inv_bodega"), "tab": view_tab_label(v),
-              "table": v.get("name", "inv_bodega")} for v in derived_views(config)]
+              "table": v.get("name", "inv_bodega"), "columns": _view_columns(v)}
+             for v in derived_views(config)]
     return {"views": views}
 
 

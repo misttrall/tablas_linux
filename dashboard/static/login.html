@@ -3,48 +3,87 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ETL Dashboard · Acceso</title>
+  <title>Acceso · Invertec BI</title>
+  <link rel="icon" type="image/png" href="/static/novus-mark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/common.css">
   <style>
-    main { max-width: 380px; margin: 80px auto; padding: 0 16px; }
-    .login-box { background: #fff; border-radius: 10px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
-    .login-box h2 { margin: 0 0 4px; font-size: 20px; }
-    .login-box .sub { color: #64748b; font-size: 13px; margin-bottom: 16px; }
-    .login-box label { display: block; font-size: 13px; color: #475569; margin: 12px 0 4px; }
-    .login-box input { width: 100%; box-sizing: border-box; }
-    .login-box .btn { width: 100%; margin-top: 18px; }
+    main { max-width: 400px; margin: 0 auto; padding: 0 16px; }
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; }
+    #loginError { margin-bottom: 12px; background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 8px; display: none; }
+    #loginError.show { display: block; }
   </style>
 </head>
-<body>
+<body class="login-body">
   <main>
-    <div class="login-box">
-      <h2>ETL Dashboard</h2>
-      <div class="sub">Ingresa con tu usuario del panel</div>
+    <div class="login-wrap">
+      <div class="login-box">
+        <div class="login-brand">
+          <img id="appLogo" alt="" style="display:none">
+          <h2 id="appTitle">Invertec BI</h2>
+        </div>
+        <div class="sub">Ingresa con tu usuario del panel</div>
       <div class="err" id="loginError"></div>
       <label>Usuario</label>
       <input type="text" id="username" autocomplete="username" autofocus>
       <label>Password</label>
-      <input type="password" id="password" autocomplete="current-password">
+      <div class="password-wrap">
+        <input type="password" id="password" autocomplete="current-password">
+        <button type="button" class="password-toggle" id="pwToggle" aria-label="Mostrar u ocultar password">Ver</button>
+      </div>
       <button class="btn" id="loginBtn">Entrar</button>
+      </div>
     </div>
   </main>
+  <footer id="appFooter"></footer>
   <script src="/static/common.js"></script>
   <script>
+    function setBusy(busy) {
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = busy;
+      btn.innerHTML = busy ? '<span class="spin"></span>Entrando…' : 'Entrar';
+    }
+
+    function showLoginError(msg) {
+      const err = document.getElementById('loginError');
+      err.textContent = msg;
+      err.classList.add('show');
+    }
+
     async function doLogin() {
       const err = document.getElementById('loginError');
       err.textContent = '';
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: document.getElementById('username').value.trim(),
-          password: document.getElementById('password').value,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) { err.textContent = data.detail || 'Usuario o password incorrectos.'; return; }
-      location.href = data.role === 'admin' ? '/panel' : '/inventario';
+      err.classList.remove('show');
+      setBusy(true);
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value.trim(),
+            password: document.getElementById('password').value,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) { showLoginError(data.detail || 'Usuario o password incorrectos.'); return; }
+        location.href = data.role === 'admin' ? '/panel' : '/derivadas';
+      } catch (e) {
+        showLoginError('No se pudo conectar con el servidor. Intenta de nuevo.');
+      } finally {
+        setBusy(false);
+      }
     }
+
+    const pw = document.getElementById('password');
+    document.getElementById('pwToggle').addEventListener('click', function () {
+      const showing = pw.type === 'text';
+      pw.type = showing ? 'password' : 'text';
+      this.textContent = showing ? 'Ver' : 'Ocultar';
+      pw.focus();
+    });
+
     document.getElementById('loginBtn').addEventListener('click', doLogin);
     document.getElementById('password').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
     document.getElementById('username').addEventListener('keydown', function (e) { if (e.key === 'Enter') document.getElementById('password').focus(); });

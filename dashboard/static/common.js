@@ -39,6 +39,46 @@ function friendlyError(detail) {
   return detail;
 }
 
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function toast(message, type) {
+  let box = document.getElementById('toastBox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'toastBox';
+    document.body.appendChild(box);
+  }
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + (type || 'info');
+  t.textContent = message;
+  box.appendChild(t);
+  setTimeout(function () {
+    t.classList.add('hide');
+    setTimeout(function () { t.remove(); }, 320);
+  }, 3400);
+}
+
+function skeletonCards() {
+  let h = '';
+  for (let i = 0; i < 3; i++) {
+    h += '<div class="card skeleton"><div class="sk-line" style="width:40%"></div>' +
+      '<div class="sk-line big" style="width:70%"></div></div>';
+  }
+  return h;
+}
+
+function skeletonRows(cols) {
+  let h = '';
+  for (let i = 0; i < 5; i++) {
+    h += '<tr><td colspan="' + cols + '"><div class="sk-row"></div></td></tr>';
+  }
+  return h;
+}
+
 function formatMoney(v) {
   return (typeof v === 'number' && !isNaN(v)) ? '$' + v.toLocaleString('es-CL', { minimumFractionDigits: 2 }) : '-';
 }
@@ -121,7 +161,7 @@ async function bootPage(allowedRoles) {
     return null;
   }
   if (allowedRoles && !allowedRoles.includes(u.role)) {
-    location.href = u.role === 'admin' ? '/panel' : '/inventario';
+    location.href = u.role === 'admin' ? '/panel' : '/derivadas';
     return null;
   }
   if (u.must_change_password) {
@@ -131,22 +171,25 @@ async function bootPage(allowedRoles) {
   return u;
 }
 
+function navLink(href, label) {
+  const cls = location.pathname === href ? ' class="active"' : '';
+  return '<a href="' + href + '"' + cls + '>' + label + '</a>';
+}
+
 function renderUserbar(user) {
   const bar = document.querySelector('#userbar');
   if (!bar) return;
   const role = user.role === 'admin' ? 'admin' : 'usuario';
   const links = [];
   if (user.role === 'admin') {
-    links.push('<a href="/etl">ETL</a>');
-    links.push('<a href="/inventario">Inventario</a>');
-    links.push('<a href="/panel">Panel</a>');
-  } else {
-    links.push('<a href="/inventario">Inventario</a>');
+    links.push(navLink('/etl', 'ETL'));
+    links.push(navLink('/panel', 'Panel'));
   }
+  links.push(navLink('/derivadas', 'Vistas'));
   bar.innerHTML = links.join('') +
     '<span class="user-menu">' +
     '<button class="user-menu-btn" onclick="toggleUserMenu(event)">' +
-    user.username + ' (' + role + ') ▾</button>' +
+    escapeHtml(user.username) + ' (' + role + ') ▾</button>' +
     '<div class="dropdown" id="userMenu" style="display:none">' +
     '<button class="dropdown-item" onclick="userMenuPassword()">Cambiar contraseña</button>' +
     '<button class="dropdown-item" onclick="logout()">Salir</button>' +
@@ -167,7 +210,13 @@ function closeUserMenu() {
 
 function userMenuPassword() {
   closeUserMenu();
-  showPasswordModal(false, function () { alert('Password actualizada'); });
+  showPasswordModal(false, function () { toast('Contraseña actualizada', 'ok'); });
 }
 
 document.addEventListener('click', closeUserMenu);
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', renderBranding);
+} else {
+  renderBranding();
+}

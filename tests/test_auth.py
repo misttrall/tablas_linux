@@ -109,7 +109,7 @@ def test_user_can_access_user_endpoints(client):
     assert client.get("/api/live").status_code == 200
     assert client.get("/api/last-sync").status_code == 200
     assert client.get("/api/inventory").status_code == 200
-    assert client.get("/inventario").status_code == 200
+    assert client.get("/derivadas").status_code == 200
 
 
 def test_change_password_flow(client):
@@ -185,7 +185,10 @@ def test_protected_pages_keep_role_checks(client):
     client.post("/api/auth/logout")
     _login(client, "solo_user", "userpass123")
 
-    assert client.get("/inventario").status_code == 200
+    redir = client.get("/inventario", follow_redirects=False)
+    assert redir.status_code == 307
+    assert redir.headers["location"] == "/derivadas"
+    assert client.get("/derivadas").status_code == 200
     assert client.get("/etl").status_code == 403
     assert client.get("/panel").status_code == 403
 
@@ -254,7 +257,7 @@ def test_root_is_protected(client):
 def test_login_page_served(client):
     res = client.get("/login")
     assert res.status_code == 200
-    assert "ETL Dashboard" in res.text
+    assert "Invertec BI" in res.text
 
 
 def test_static_assets_served(client):

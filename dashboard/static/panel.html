@@ -3,12 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Panel · ETL Dashboard</title>
+  <title>Panel · Invertec BI</title>
+  <link rel="icon" type="image/png" href="/static/novus-mark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/common.css">
 </head>
 <body>
   <header>
-    <h1>ETL Dashboard</h1>
+    <img id="appLogo" alt="" style="display:none">
+    <h1 id="appTitle">Invertec BI</h1>
     <div class="userbar" id="userbar"></div>
   </header>
   <main>
@@ -17,11 +22,14 @@
     <div class="toolbar">
       <button class="btn" onclick="showCreateUserModal()">Crear usuario</button>
     </div>
-    <table id="users">
-      <thead><tr><th>#</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-wrap">
+      <table id="users">
+        <thead><tr><th>#</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </main>
+  <footer id="appFooter"></footer>
   <script src="/static/common.js"></script>
   <script>
     let currentUser = null;
@@ -79,19 +87,20 @@
         const extra = flags.length ? ' <span class="hint">(' + flags.join(', ') + ')</span>' : '';
         const isSelf = u.id === currentUser.id;
         const actions = [];
+        const esc = escapeHtml(u.username);
         if (u.is_root) {
-          actions.push('<button class="btn" onclick="resetPassword(' + u.id + ',\'' + u.username + '\')">Reset password</button>');
+          actions.push('<button class="btn" onclick="showResetModal(' + u.id + ')">Reset password</button>');
         } else {
-          actions.push('<button class="btn" onclick="toggleRole(' + u.id + ',\'' + u.username + '\')">' +
+          actions.push('<button class="btn" onclick="toggleRole(' + u.id + ',\'' + esc + '\')">' +
             (u.role === 'admin' ? 'Quitar admin' : 'Hacer admin') + '</button> ');
-          actions.push('<button class="btn" onclick="toggleActive(' + u.id + ',\'' + u.username + '\')">' +
+          actions.push('<button class="btn" onclick="toggleActive(' + u.id + ',\'' + esc + '\')">' +
             (u.active ? 'Desactivar' : 'Activar') + '</button> ');
-          actions.push('<button class="btn" onclick="resetPassword(' + u.id + ',\'' + u.username + '\')">Reset password</button> ');
+          actions.push('<button class="btn" onclick="showResetModal(' + u.id + ')">Reset password</button> ');
           if (!isSelf) {
-            actions.push('<button class="btn danger" onclick="deleteUser(' + u.id + ',\'' + u.username + '\')">Eliminar</button>');
+            actions.push('<button class="btn danger" onclick="deleteUser(' + u.id + ',\'' + esc + '\')">Eliminar</button>');
           }
         }
-        return '<tr><td>' + u.id + '</td><td>' + u.username + extra + '</td><td>' + u.role +
+        return '<tr><td>' + u.id + '</td><td>' + escapeHtml(u.username) + extra + '</td><td>' + u.role +
           '</td><td>' + (u.active ? 'activo' : 'inactivo') + '</td><td>' + actions.join(' ') + '</td></tr>';
       }).join('');
     }
@@ -113,27 +122,64 @@
       const u = (await (await api('/api/admin/users')).json()).find(x => x.id === id);
       if (!u) return;
       const ok = await doAction('/api/admin/users/' + id, 'PATCH', { role: u.role === 'admin' ? 'user' : 'admin' });
-      if (ok) { alert('Rol de ' + username + ' actualizado'); loadUsers(); }
+      if (ok) { toast('Rol de ' + username + ' actualizado', 'ok'); loadUsers(); }
     }
 
     async function toggleActive(id, username) {
       const u = (await (await api('/api/admin/users')).json()).find(x => x.id === id);
       if (!u) return;
       const ok = await doAction('/api/admin/users/' + id, 'PATCH', { active: !u.active });
-      if (ok) { alert((u.active ? 'Desactivado' : 'Activado') + ' ' + username); loadUsers(); }
+      if (ok) { toast((u.active ? 'Desactivado' : 'Activado') + ' ' + username, 'ok'); loadUsers(); }
     }
 
-    async function resetPassword(id, username) {
-      const p = prompt('Nueva password para ' + username + ' (mínimo 8):');
-      if (!p) return;
-      const ok = await doAction('/api/admin/users/' + id + '/password', 'POST', { new_password: p });
-      if (ok) alert('Password de ' + username + ' actualizada');
+    function renderResetModal() {
+      const div = document.createElement('div');
+      div.id = 'resetModal';
+      div.className = 'modal-backdrop';
+      div.style.display = 'none';
+      div.innerHTML =
+        '<div class="modal">' +
+        '<h3 id="resetTitle">Reset password</h3>' +
+        '<div class="err" id="resetModalError"></div>' +
+        '<label>Nueva password (mínimo 8)</label><input type="password" id="resetPassword">' +
+        '<div class="modal-actions">' +
+        '<button class="btn" id="resetCancel">Cancelar</button>' +
+        '<button class="btn" id="resetOk">Guardar</button>' +
+        '</div></div>';
+      document.body.appendChild(div);
+      document.getElementById('resetCancel').onclick = function () { div.style.display = 'none'; };
+      document.getElementById('resetOk').onclick = resetPassword;
+      return div;
+    }
+
+    function showResetModal(id) {
+      const m = document.getElementById('resetModal') || renderResetModal();
+      m.style.display = 'flex';
+      resetTargetId = id;
+      document.getElementById('resetPassword').value = '';
+      document.getElementById('resetModalError').textContent = '';
+      document.getElementById('resetPassword').focus();
+    }
+
+    let resetTargetId = null;
+
+    async function resetPassword() {
+      const err = document.getElementById('resetModalError');
+      err.textContent = '';
+      const p = document.getElementById('resetPassword').value;
+      if (!p) { err.textContent = 'Ingresa una password (mínimo 8).'; return; }
+      const ok = await doAction('/api/admin/users/' + resetTargetId + '/password', 'POST', { new_password: p });
+      if (ok) {
+        document.getElementById('resetModal').style.display = 'none';
+        toast('Password actualizada', 'ok');
+        loadUsers();
+      }
     }
 
     async function deleteUser(id, username) {
       if (!confirm('¿Eliminar al usuario ' + username + '?')) return;
       const ok = await doAction('/api/admin/users/' + id, 'DELETE');
-      if (ok) { alert('Usuario ' + username + ' eliminado'); loadUsers(); }
+      if (ok) { toast('Usuario ' + username + ' eliminado', 'ok'); loadUsers(); }
     }
 
     async function createUser() {
@@ -149,6 +195,7 @@
       }, err);
       if (ok) {
         document.getElementById('createModal').style.display = 'none';
+        toast('Usuario ' + username + ' creado', 'ok');
         loadUsers();
       }
     }

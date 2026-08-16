@@ -143,7 +143,10 @@
             "properties": {
               "as": { "type": "string" },
               "source": { "type": "string" },
-              "compute": { "type": "string" }
+              "compute": { "type": "string" },
+              "label": { "type": "string" },
+              "hide": { "type": "boolean" },
+              "fallback": { "type": "string" }
             },
             "additionalProperties": true
           }

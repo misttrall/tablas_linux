@@ -3,30 +3,43 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ETL · Dashboard</title>
+  <title>ETL · Invertec BI</title>
+  <link rel="icon" type="image/png" href="/static/novus-mark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/common.css">
 </head>
 <body>
   <header>
-    <h1>ETL Dashboard</h1>
+    <img id="appLogo" alt="" style="display:none">
+    <h1 id="appTitle">Invertec BI</h1>
     <div class="userbar" id="userbar"></div>
   </header>
   <main>
+    <div class="toolbar">
+      <button class="btn sync" id="btnSync" onclick="syncNow()">Sincronizar</button>
+      <span id="syncStatus" class="hint">-</span>
+    </div>
     <div class="cards">
       <div class="card"><div class="label">Estado última corrida</div><div class="value" id="lastStatus">-</div></div>
       <div class="card"><div class="label">Tablas ok</div><div class="value" id="tablesOk">-</div></div>
       <div class="card"><div class="label">Filas cargadas</div><div class="value" id="totalRows">-</div></div>
     </div>
     <h2>Últimas corridas</h2>
-    <table id="executions">
-      <thead><tr><th>#</th><th>Estado</th><th>Inicio</th><th>Fin</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-wrap">
+      <table id="executions">
+        <thead><tr><th>#</th><th>Estado</th><th>Inicio</th><th>Fin</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <h2>Progreso por tabla</h2>
-    <table id="progress">
-      <thead><tr><th>Tabla</th><th>Estado</th><th>Filas</th><th>Delta</th><th>Actualizado</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-wrap">
+      <table id="progress">
+        <thead><tr><th>Tabla</th><th>Estado</th><th>Filas</th><th>Delta</th><th>Actualizado</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <h2>Extracción en vivo</h2>
     <div class="cards">
       <div class="card"><div class="label">Fase</div><div class="value" id="livePhase">idle</div></div>
@@ -41,11 +54,14 @@
     </div>
     <h2>Detalle por corrida</h2>
     <select id="runSelect" onchange="loadRunDetail()"></select>
-    <table id="runDetail" style="margin-top:8px;">
-      <thead><tr><th>Tabla</th><th>Estado</th><th>Chunks</th><th>Filas</th><th>Duración (s)</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-wrap">
+      <table id="runDetail" style="margin-top:8px;">
+        <thead><tr><th>Tabla</th><th>Estado</th><th>Chunks</th><th>Filas</th><th>Duración (s)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </main>
+  <footer id="appFooter"></footer>
   <script src="/static/common.js"></script>
   <script>
     async function init() {
@@ -54,6 +70,7 @@
       renderUserbar(user);
       refresh();
       refreshLive();
+      loadLastSync();
       setInterval(refresh, 30000);
       setInterval(refreshLive, 2000);
     }
@@ -108,12 +125,78 @@
         '</td><td>' + (r.rows_extracted || 0) + '</td><td>' + (r.duration_s || 0) + '</td></tr>').join('');
     }
 
+    let wasRunning = false;
+    let lastSyncInfo = null;
+
+    function formatSyncTime(ts) {
+      if (!ts) return null;
+      const d = new Date(ts.replace(' ', 'T'));
+      return isNaN(d.getTime()) ? null : d.toLocaleString('es-CL');
+    }
+
+    function renderSyncStatus() {
+      const status = document.getElementById('syncStatus');
+      if (!lastSyncInfo) {
+        status.textContent = 'Inactivo. Aún no hay sincronizaciones.';
+      } else if (lastSyncInfo.end_time) {
+        const t = formatSyncTime(lastSyncInfo.end_time);
+        status.textContent = 'Inactivo. La última sincronización fue ' + (t || lastSyncInfo.end_time);
+      } else {
+        status.textContent = 'Inactivo. La última sincronización quedó en ' + lastSyncInfo.status + ' (sin terminar).';
+      }
+    }
+
+    async function syncNow() {
+      const btn = document.getElementById('btnSync');
+      btn.disabled = true;
+      document.getElementById('syncStatus').textContent = 'Disparando ETL…';
+      const res = await api('/api/etl/trigger', { method: 'POST' });
+      const data = await res.json();
+      if (!data.ok) {
+        document.getElementById('syncStatus').textContent =
+          (data.reason === 'already_running')
+            ? 'Ya hay una corrida en curso (run #' + (data.run_id || '?') + ').'
+            : 'No se pudo disparar el ETL: ' + (data.reason || 'desconocido');
+        toast('Ya hay una sincronización en curso', 'error');
+        btn.disabled = false;
+      } else {
+        toast('ETL disparado (run #' + (data.run_id || '?') + ')', 'ok');
+      }
+    }
+
     async function refreshLive() {
       const res = await api('/api/live');
       const l = await res.json();
+      const btn = document.getElementById('btnSync');
+      const status = document.getElementById('syncStatus');
       document.getElementById('livePhase').textContent = l.phase;
       document.getElementById('liveTable').textContent = l.table || '-';
       document.getElementById('liveRows').textContent = l.rows_so_far || 0;
+      if (l.running) {
+        wasRunning = true;
+        btn.disabled = true;
+        status.textContent = 'Sincronizando… fase ' + l.phase +
+          (l.table ? ' · ' + l.table : '') + ' · ' + (l.rows_so_far || 0) + ' filas';
+      } else if (wasRunning) {
+        wasRunning = false;
+        btn.disabled = false;
+        const ex = await api('/api/last-sync').then(r => r.json());
+        lastSyncInfo = ex && ex.id ? ex : null;
+        const recent = ex && ex.end_time &&
+          (new Date() - new Date(ex.end_time.replace(' ', 'T'))) < 300000;
+        if (recent && ex.status === 'failed') {
+          status.textContent = 'La sincronización #' + ex.id + ' falló. Revisa logs/etl_sync.log y vuelve a intentar.';
+        } else if (ex && ex.id) {
+          status.textContent = 'Sincronización #' + ex.id + ' ' + ex.status + ' a las ' +
+            (formatSyncTime(ex.end_time) || ex.end_time || '—');
+        } else {
+          status.textContent = 'Inactivo. Aún no hay sincronizaciones.';
+        }
+        refresh();
+      } else {
+        btn.disabled = false;
+        renderSyncStatus();
+      }
       const wrap = document.getElementById('liveBarWrap');
       if (l.running && l.chunk_total > 0) {
         wrap.style.display = 'block';
@@ -124,6 +207,13 @@
       } else {
         wrap.style.display = 'none';
       }
+    }
+
+    async function loadLastSync() {
+      const res = await api('/api/last-sync');
+      const ex = await res.json();
+      lastSyncInfo = ex && ex.id ? ex : null;
+      renderSyncStatus();
     }
 
     init();
