@@ -8,6 +8,22 @@ Siempre se normaliza a lista y se valida que los nombres de tabla sean únicos
 DEFAULT_VIEW_NAME = "inv_bodega"
 
 
+def derived_view_by_name(config, name=None):
+    target = name or DEFAULT_VIEW_NAME
+    for view in derived_views(config):
+        if view.get("name", DEFAULT_VIEW_NAME) == target:
+            return view
+    return None
+
+
+def view_tab_label(view):
+    tab = (view.get("tab") or "").strip()
+    if tab:
+        return tab
+    name = view.get("name", DEFAULT_VIEW_NAME)
+    return " ".join(part.capitalize() for part in name.split("_"))
+
+
 def derived_views(config):
     """Devuelve la lista de visiones derivadas (vacía si no hay sección 'derived')."""
     d = config.get("derived")
