@@ -306,7 +306,7 @@ La BD destino se toma de `ETL_CONFIG` (o `config.json` por defecto).
 
 - Login con **JWT (HS256)** + **bcrypt** (costo 12); la sesión viaja en la cookie `etl_session` (HttpOnly, SameSite=Lax, Secure opcional vía `ETL_COOKIE_SECURE`).
 - Los usuarios viven en la tabla `app_users` de la BD destino (migración `004_app_users.sql`).
-- Roles: `user` (inventario, estado, botón Sincronizar) y `admin` (además: panel de ejecuciones, progreso, agregados y gestión de usuarios). El usuario raíz (`is_root`) no se puede borrar ni degradar, y solo él cambia su propia password.
+- Roles: `user` (Vistas) y `admin` (además: ETL, panel de ejecuciones, progreso, agregados y gestión de usuarios). El usuario raíz (`is_root`) no se puede borrar ni degradar, y solo él cambia su propia password.
 - En el primer login, un usuario con `must_change_password` debe cambiar su password (mínimo 8 caracteres).
 - El instalador crea el admin raíz `admin` (password inicial `extractor`) si no existen usuarios.
 - Gestión de usuarios: `python -m cli users add|list|set-password` o desde `/panel` (admin).
@@ -315,16 +315,35 @@ La BD destino se toma de `ETL_CONFIG` (o `config.json` por defecto).
 
 | Ruta | Acceso | Contenido |
 |---|---|---|
-| `/` | redirige | A `/login`, `/panel` (admin) o `/inventario` |
+| `/` | redirige | A `/login`, `/panel` (admin) o `/derivadas` (user) |
 | `/login` | público | Login |
-| `/inventario` | user y admin | Pestaña `#inventario` |
-| `/etl` | admin | Pestaña `#etl` (monitoreo de corridas) |
+| `/derivadas` | user y admin | Vistas: listado curado de la vista derivada con filtros |
+| `/etl` | admin | Monitoreo de corridas y botón **Sincronizar** (dispara el ETL) |
 | `/panel` | admin | Panel de administración y gestión de usuarios |
+| `/inventario` | — | Retrocompat: redirige a `/derivadas` |
 
-La interfaz usa dos pestañas con hash URL (`#etl` / `#inventario`):
+Navegación por rol: **admin** = `ETL / Panel / Vistas`; **user** = `Vistas`.
 
-- **ETL** (`/etl`, admin): últimas corridas, progreso por tabla, extracción en vivo (fase, tabla, filas, chunk x/N) y detalle por corrida.
-- **Inventario** (`/inventario`): cards de resumen (materiales, valor total, bajo mínimo, valor en riesgo), filtros por **centro, almacén y área** (valores reales desde la tabla derivada), búsqueda de texto, checkbox **"Solo bajo stock"** y tabla paginada con las filas bajo mínimo resaltadas.
+- **Vistas** (`/derivadas`): cards de resumen (filas, total, alertas), filtros por **centro, almacén y área** (valores reales desde la tabla derivada), búsqueda de texto, checkbox **"Solo bajo stock"** y tabla paginada con las filas bajo mínimo resaltadas. Las columnas mostradas, sus etiquetas y las columnas ocultas se declaran por vista en `derived.columns` (`label`, `hide`, `fallback`).
+- **ETL** (`/etl`, admin): últimas corridas, progreso por tabla, extracción en vivo (fase, tabla, filas, chunk x/N) y botón **Sincronizar** que dispara el pipeline.
+- **Panel** (`/panel`, admin): ejecuciones y gestión de usuarios.
+
+### Demo y verificación E2E
+
+Levantar el demo en el puerto 8001 (no toca instancias ajenas; puerto 8000 queda intacto):
+
+```bash
+scripts/run_demo.sh start     # start | stop | status | log
+ETL_SECRET=... scripts/run_demo.sh start   # secret sobreescribible
+```
+
+Verificar el dashboard con Playwright (login, branding, navegación por rol, redirecciones, columnas de Vistas, filtros, botón Sincronizar y ausencia de errores JS):
+
+```bash
+.venv/bin/python scripts/verify_dashboard.py            # contra http://127.0.0.1:8001
+.venv/bin/python scripts/verify_dashboard.py --base http://127.0.0.1:9000 --username demo --password demo1234
+```
+
 
 ### Endpoints de la API
 
