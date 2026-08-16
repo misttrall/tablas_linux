@@ -1,0 +1,26 @@
+[Unit]
+Description=ETL Dashboard web
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Usuario/grupo sustituidos por deploy/install.sh en el destino.
+User=etl
+Group=etl
+WorkingDirectory=/opt/etl/tablas_linux
+Environment=ETL_CONFIG=/opt/etl/tablas_linux/config.json
+Environment=ETL_LIVE_FILE=/tmp/etl_live.json
+Environment=SAPNWRFC_HOME=/opt/sap/nwrfcsdk
+Environment=LD_LIBRARY_PATH=/opt/sap/nwrfcsdk/lib
+EnvironmentFile=/opt/etl/tablas_linux/.env
+# Ejecuta el botón "Sincronizar" heredando el SDK SAP (SAPNWRFC_HOME /
+# LD_LIBRARY_PATH) para poder disparar `cli run` bajo demanda.
+ExecStart=/opt/etl/tablas_linux/venv/bin/python -m uvicorn dashboard.app:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

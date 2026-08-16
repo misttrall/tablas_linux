@@ -71,18 +71,25 @@ def test_live_dashboard_endpoint(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
 
     from dashboard import app as dashboard_app
+    from dashboard.auth import require_user
 
     path = tmp_path / "live.json"
     monkeypatch.setenv("ETL_LIVE_FILE", str(path))
     update_live(running=True, run_id=99, table="MBEW", phase="extrayendo",
                 chunk_index=10, chunk_total=63, rows_so_far=5000, elapsed_s=3.2)
 
-    client = TestClient(dashboard_app.app)
-    res = client.get("/api/live")
-    assert res.status_code == 200
-    data = res.json()
-    assert data["running"] is True
-    assert data["table"] == "MBEW"
-    assert data["chunk_index"] == 10
-    assert data["chunk_total"] == 63
-    assert data["rows_so_far"] == 5000
+    dashboard_app.app.dependency_overrides[require_user] = lambda: {
+        "id": 1, "username": "admin", "role": "admin", "is_root": True,
+    }
+    try:
+        client = TestClient(dashboard_app.app)
+        res = client.get("/api/live")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["running"] is True
+        assert data["table"] == "MBEW"
+        assert data["chunk_index"] == 10
+        assert data["chunk_total"] == 63
+        assert data["rows_so_far"] == 5000
+    finally:
+        dashboard_app.app.dependency_overrides.clear()

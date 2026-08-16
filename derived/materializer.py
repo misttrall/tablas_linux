@@ -7,6 +7,8 @@ de dónde salen el área y el stock mínimo (tabla de referencia o fallback en
 config), columnas de salida y exportación a Excel.
 """
 
+import logging
+
 import pandas as pd
 from sqlalchemy import inspect, text
 
@@ -16,6 +18,8 @@ from derived.db import read_table, table_exists
 from derived.excel_export import export_inventory_excel
 from derived.views import derived_views, resolve_view
 from utils.config_loader import load_config
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_DERIVED_COLUMNS = [
     {"as": "MATNR", "source": "MATNR"},
@@ -154,26 +158,31 @@ def _area_series(df, engine, area_cfg):
         return pd.Series("", index=df.index)
     mapping = None
     ref = area_cfg.get("reference_table")
-    if ref and table_exists(engine, ref):
-        lookup = read_table(engine, ref)
-        join = area_cfg.get("join") or {}
-        jt = join.get("table")
-        if jt and table_exists(engine, jt):
-            lookup = lookup.merge(
-                read_table(engine, jt),
-                left_on=join["on_local"],
-                right_on=join["on_foreign"],
-                how="left",
-                suffixes=("", "_area"),
+    if ref:
+        if table_exists(engine, ref):
+            lookup = read_table(engine, ref)
+            join = area_cfg.get("join") or {}
+            jt = join.get("table")
+            if jt and table_exists(engine, jt):
+                lookup = lookup.merge(
+                    read_table(engine, jt),
+                    left_on=join["on_local"],
+                    right_on=join["on_foreign"],
+                    how="left",
+                    suffixes=("", "_area"),
+                )
+            cols = area_cfg.get("columns", {"key": "material", "value": "area"})
+            _require_cols(lookup, [cols["key"], cols["value"]], "area")
+            series = pd.Series(
+                lookup[cols["value"]].to_numpy(),
+                index=lookup[cols["key"]].to_numpy(),
             )
-        cols = area_cfg.get("columns", {"key": "material", "value": "area"})
-        _require_cols(lookup, [cols["key"], cols["value"]], "area")
-        series = pd.Series(
-            lookup[cols["value"]].to_numpy(),
-            index=lookup[cols["key"]].to_numpy(),
-        )
-        series = series[~series.index.duplicated(keep="last")]
-        mapping = dict(series.items())
+            series = series[~series.index.duplicated(keep="last")]
+            mapping = dict(series.items())
+        else:
+            logger.warning(
+                "Tabla de referencia de área '%s' no existe en la BD destino; "
+                "el campo Area quedará vacío", ref)
     if mapping is None:
         mapping = area_cfg.get("mapping")
     if not mapping:
@@ -189,26 +198,30 @@ def _minimo_series(df, engine, minimo_cfg):
     if not minimo_cfg:
         return empty
     ref = minimo_cfg.get("reference_table")
-    if ref and table_exists(engine, ref):
-        lookup = read_table(engine, ref)
-        key_cols = minimo_cfg.get("key_columns", ["material"])
-        value_col = minimo_cfg.get("value_column", "stock_minimo")
-        _require_cols(lookup, key_cols + [value_col], "stock_minimo")
-        on = minimo_cfg.get("on")
-        if on is None:
-            on = ["MATNR", "WERKS", "LGORT"] if len(key_cols) >= 3 else (
-                ["MATNR", "WERKS"] if len(key_cols) == 2 else ["MATNR"])
-        if len(on) != len(key_cols):
-            raise ValueError("derived.stock_minimo: 'on' debe alinearse con 'key_columns'")
-        if any(c not in df.columns for c in on):
-            return empty
-        series = pd.Series(
-            lookup[value_col].to_numpy(),
-            index=pd.MultiIndex.from_frame(lookup[key_cols]),
-        )
-        series = series[~series.index.duplicated(keep="last")]
-        idx = pd.MultiIndex.from_frame(df[on])
-        return idx.map(dict(series.items())).astype("Float64")
+    if ref:
+        if table_exists(engine, ref):
+            lookup = read_table(engine, ref)
+            key_cols = minimo_cfg.get("key_columns", ["material"])
+            value_col = minimo_cfg.get("value_column", "stock_minimo")
+            _require_cols(lookup, key_cols + [value_col], "stock_minimo")
+            on = minimo_cfg.get("on")
+            if on is None:
+                on = ["MATNR", "WERKS", "LGORT"] if len(key_cols) >= 3 else (
+                    ["MATNR", "WERKS"] if len(key_cols) == 2 else ["MATNR"])
+            if len(on) != len(key_cols):
+                raise ValueError("derived.stock_minimo: 'on' debe alinearse con 'key_columns'")
+            if any(c not in df.columns for c in on):
+                return empty
+            series = pd.Series(
+                lookup[value_col].to_numpy(),
+                index=pd.MultiIndex.from_frame(lookup[key_cols]),
+            )
+            series = series[~series.index.duplicated(keep="last")]
+            idx = pd.MultiIndex.from_frame(df[on])
+            return idx.map(dict(series.items())).astype("Float64")
+        logger.warning(
+            "Tabla de referencia de stock mínimo '%s' no existe en la BD destino; "
+            "el stock mínimo quedará vacío", ref)
     mapping = minimo_cfg.get("mapping")
     if mapping:
         if "MATNR" not in df.columns:

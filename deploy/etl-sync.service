@@ -1,0 +1,15 @@
+[Unit]
+Description=ETL sincronización horaria (:45)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Usuario/grupo sustituidos por deploy/install.sh en el destino.
+User=etl
+Group=etl
+ExecStart=/opt/etl/tablas_linux/deploy/etl_sync_run.sh
+# 42 = corrida pospuesta (ya había una activa); no es un fallo.
+SuccessExitStatus=42
+StandardOutput=journal
+StandardError=journal

@@ -257,6 +257,59 @@ def _add_config_arg(subparser):
     return subparser
 
 
+def cmd_users(args):
+    from dashboard.auth import engine as auth_engine
+    from dashboard.auth import users as auth_users
+
+    config = load_config(args.config)
+    previous = auth_engine.get_engine_provider()
+    auth_engine.set_engine_provider(
+        lambda: _engine_from_config(config, fast_executemany=False))
+    try:
+        return _cmd_users_action(auth_users, args)
+    finally:
+        auth_engine.set_engine_provider(previous)
+
+
+def _cmd_users_action(auth_users, args):
+    action = args.users_action
+    if action == "add":
+        role = "admin" if args.root else args.role
+        try:
+            user_id = auth_users.create_user(
+                username=args.username,
+                password=args.password,
+                role=role,
+                is_root=args.root,
+                must_change_password=not args.no_force_password_change,
+            )
+        except Exception as e:
+            print(f"[error] no se pudo crear el usuario: {e}")
+            return 1
+        print(f"[ok] usuario '{args.username}' creado (id={user_id}, role={role})")
+        return 0
+    if action == "list":
+        for u in auth_users.list_users():
+            flags = []
+            if u["is_root"]:
+                flags.append("root")
+            flags.append("activo" if u["active"] else "inactivo")
+            if u["must_change_password"]:
+                flags.append("cambiar-password")
+            print(f"#{u['id']} {u['username']} [{u['role']}] ({', '.join(flags)})")
+        return 0
+    if action == "set-password":
+        user = auth_users.get_user_by_username(args.username)
+        if user is None:
+            print(f"[error] usuario '{args.username}' no existe")
+            return 1
+        auth_users.set_password(user["id"], args.password)
+        print(f"[ok] password actualizada para '{args.username}'")
+        return 0
+    print("Uso: etl users {add|list|set-password} ...")
+    return 1
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="etl",
@@ -311,6 +364,28 @@ def main(argv=None):
                                help="Columna de origen del área (por defecto: area)")
     _add_config_arg(import_parser)
 
+    users_parser = subparsers.add_parser(
+        "users", help="Gestiona usuarios del dashboard (app_users de la BD destino)")
+    users_sub = users_parser.add_subparsers(dest="users_action")
+
+    add_parser = users_sub.add_parser("add", help="Crea un usuario")
+    add_parser.add_argument("--username", required=True)
+    add_parser.add_argument("--password", required=True)
+    add_parser.add_argument("--role", default="user", choices=["user", "admin"])
+    add_parser.add_argument("--root", action="store_true",
+                            help="Marca como admin raíz (protegido contra borrado)")
+    add_parser.add_argument("--no-force-password-change", action="store_true",
+                            help="No obliga a cambiar la password en el primer login")
+    _add_config_arg(add_parser)
+
+    list_parser = users_sub.add_parser("list", help="Lista los usuarios")
+    _add_config_arg(list_parser)
+
+    pass_parser = users_sub.add_parser("set-password", help="Cambia la password de un usuario")
+    pass_parser.add_argument("--username", required=True)
+    pass_parser.add_argument("--password", required=True)
+    _add_config_arg(pass_parser)
+
     args = parser.parse_args(argv)
 
     if args.command == "run":
@@ -327,6 +402,8 @@ def main(argv=None):
     if args.command == "importar-minimos":
         return cmd_importar_minimos(args.config, args.archivo, args.hoja, args.tabla,
                                     args.col_material, args.col_stock, args.col_area)
+    if args.command == "users":
+        return cmd_users(args)
 
     parser.print_help()
     return 0

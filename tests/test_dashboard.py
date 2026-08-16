@@ -11,6 +11,16 @@ from sqlalchemy import create_engine, text
 
 import cli
 from dashboard import app as dashboard_app
+from dashboard.auth import users as auth_users
+
+
+def _login_admin(client):
+    auth_users.create_user("admin", "testpass123", role="admin", is_root=True,
+                           must_change_password=False)
+    res = client.post("/api/auth/login",
+                      json={"username": "admin", "password": "testpass123"})
+    assert res.status_code == 200
+    return client
 
 
 @pytest.fixture
@@ -45,7 +55,8 @@ def client(tmp_path, monkeypatch):
             "VALUES (1, 'Mara_Data', 63, 63, 15687, 3.2, 'ok')"))
 
     monkeypatch.setenv("ETL_CONFIG", str(cfg_path))
-    return TestClient(dashboard_app.app)
+    monkeypatch.setenv("ETL_SECRET", "test-secret")
+    return _login_admin(TestClient(dashboard_app.app))
 
 
 def test_health(client):
@@ -84,9 +95,11 @@ def test_dashboard_aggregate(client):
 
 
 def test_index_served(client):
-    res = client.get("/")
-    assert res.status_code == 200
-    assert "ETL Dashboard" in res.text
+    res = client.get("/", follow_redirects=False)
+    assert res.status_code == 307
+    res2 = client.get("/inventario")
+    assert res2.status_code == 200
+    assert "ETL Dashboard" in res2.text
 
 
 def test_tables_detail(client):
@@ -137,7 +150,8 @@ def inventory_client(tmp_path, monkeypatch):
         ]).to_sql("inv_bodega", conn, index=False)
 
     monkeypatch.setenv("ETL_CONFIG", str(cfg_path))
-    return TestClient(dashboard_app.app)
+    monkeypatch.setenv("ETL_SECRET", "test-secret")
+    return _login_admin(TestClient(dashboard_app.app))
 
 
 def test_inventory_summary(inventory_client):

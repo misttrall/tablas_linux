@@ -1,0 +1,6 @@
+# Dependencias opcionales para extracción SAP: el binding pyrfc no está en
+# PyPI; se instala desde el wheel provisto por SAP (requiere el SDK NW RFC
+# licenciado, montado en SAPNWRFC_HOME). Instalar con:
+#   venv/bin/pip install -r requirements-sap.txt
+-r requirements-etl.txt
+pyrfc

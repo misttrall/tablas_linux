@@ -10,16 +10,25 @@ import sys
 import time
 
 import pandas as pd
-from fastapi import FastAPI
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sqlalchemy import create_engine, text
 
+from dashboard import auth as auth_pkg
+from dashboard.auth import require_admin, require_user
+from dashboard.auth.dependencies import current_user_or_none
 from db.db_connection import _connection_string
 from utils.config_loader import load_config
 from utils.live import _live_file, read_live, update_live
 
 app = FastAPI(title="ETL Dashboard")
+
+app.include_router(auth_pkg.router)
+
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # PID del último ETL disparado por el botón Sincronizar (para vigilar/recolectar).
 _SPAWNED_PID = {"pid": None}
@@ -38,6 +47,9 @@ def get_engine():
     if config["database"].get("dialect", "mssql") == "mssql":
         kwargs["fast_executemany"] = True
     return create_engine(_connection_string(config["database"]), **kwargs)
+
+
+auth_pkg.set_engine_provider(get_engine)
 
 
 def _child_status():
@@ -167,8 +179,21 @@ class DashboardData(BaseModel):
     last_execution: dict
 
 
+def _last_execution():
+    engine = get_engine()
+    with engine.connect() as conn:
+        row = conn.execute(
+            text("SELECT id, status, start_time, end_time "
+                 "FROM etl_execution ORDER BY id DESC LIMIT 1"),
+        ).fetchone()
+    if row is None:
+        return None
+    return {"id": row.id, "status": row.status,
+            "start_time": str(row.start_time), "end_time": str(row.end_time or "")}
+
+
 @app.get("/api/executions")
-def api_executions(last: int = 10):
+def api_executions(last: int = 10, user=Depends(require_admin)):
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(
@@ -182,7 +207,7 @@ def api_executions(last: int = 10):
 
 
 @app.get("/api/progress")
-def api_progress():
+def api_progress(user=Depends(require_admin)):
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(
@@ -196,7 +221,7 @@ def api_progress():
 
 
 @app.get("/api/dashboard")
-def api_dashboard():
+def api_dashboard(user=Depends(require_admin)):
     engine = get_engine()
     with engine.connect() as conn:
         runs = conn.execute(
@@ -228,13 +253,18 @@ def api_health():
 
 
 @app.get("/api/live")
-def api_live():
+def api_live(user=Depends(require_user)):
     _recover_stale()
     return read_live()
 
 
+@app.get("/api/last-sync")
+def api_last_sync(user=Depends(require_user)):
+    return _last_execution()
+
+
 @app.get("/api/tables")
-def api_tables(run_id: int):
+def api_tables(run_id: int, user=Depends(require_admin)):
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(
@@ -336,7 +366,7 @@ def _inventory_summary(df, view):
 
 
 @app.get("/api/inventory")
-def api_inventory():
+def api_inventory(user=Depends(require_user)):
     df, view = _inventory_frame()
     if view is None:
         return {"available": False, "reason": "no_derived"}
@@ -347,7 +377,7 @@ def api_inventory():
 
 
 @app.get("/api/inventory/filters")
-def api_inventory_filters():
+def api_inventory_filters(user=Depends(require_user)):
     df, view = _inventory_frame()
     if view is None or df is None:
         return {"available": False}
@@ -367,7 +397,8 @@ def api_inventory_filters():
 @app.get("/api/inventory/items")
 def api_inventory_items(centro: str = "", almacen: str = "", area: str = "",
                         low_only: bool = False, q: str = "",
-                        limit: int = 100, offset: int = 0):
+                        limit: int = 100, offset: int = 0,
+                        user=Depends(require_user)):
     df, view = _inventory_frame()
     if view is None:
         return {"available": False, "reason": "no_derived"}
@@ -391,13 +422,13 @@ def api_inventory_items(centro: str = "", almacen: str = "", area: str = "",
 
 
 @app.get("/api/inventory/alerts")
-def api_inventory_alerts(limit: int = 500, q: str = ""):
+def api_inventory_alerts(limit: int = 500, q: str = "", user=Depends(require_user)):
     data = api_inventory_items(low_only=True, q=q, limit=limit, offset=0)
     return {"alerts": data.get("rows", [])}
 
 
 @app.post("/api/etl/trigger")
-def api_etl_trigger():
+def api_etl_trigger(user=Depends(require_user)):
     _recover_stale()
 
     live = read_live()
@@ -445,7 +476,46 @@ def api_etl_trigger():
     return {"ok": True, "pid": proc.pid}
 
 
-@app.get("/", response_class=HTMLResponse)
-def index():
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "index.html")
+def _page(name):
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", name)
     return FileResponse(path)
+
+
+@app.get("/", include_in_schema=False)
+def root(user=Depends(current_user_or_none)):
+    if user is None:
+        return RedirectResponse(url="/login", status_code=307)
+    return RedirectResponse(
+        url="/panel" if user["role"] == "admin" else "/inventario",
+        status_code=307,
+    )
+
+
+@app.get("/login", response_class=HTMLResponse, include_in_schema=False)
+def page_login():
+    return _page("login.html")
+
+
+@app.get("/inventario", response_class=HTMLResponse, include_in_schema=False)
+def page_inventario(user=Depends(current_user_or_none)):
+    if user is None:
+        return RedirectResponse(url="/login", status_code=307)
+    return _page("inventario.html")
+
+
+@app.get("/etl", response_class=HTMLResponse, include_in_schema=False)
+def page_etl(user=Depends(current_user_or_none)):
+    if user is None:
+        return RedirectResponse(url="/login", status_code=307)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="forbidden")
+    return _page("etl.html")
+
+
+@app.get("/panel", response_class=HTMLResponse, include_in_schema=False)
+def page_panel(user=Depends(current_user_or_none)):
+    if user is None:
+        return RedirectResponse(url="/login", status_code=307)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="forbidden")
+    return _page("panel.html")

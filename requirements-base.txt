@@ -5,6 +5,5 @@ jsonschema
 pyodbc
 psycopg2-binary
 pymysql
-pyrfc
 python-dotenv
 requests

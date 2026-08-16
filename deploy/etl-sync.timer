@@ -1,0 +1,10 @@
+[Unit]
+Description=Dispara el ETL cada hora en el minuto :45
+
+[Timer]
+OnCalendar=*-*-* *:45:00
+Persistent=true
+Unit=etl-sync.service
+
+[Install]
+WantedBy=timers.target

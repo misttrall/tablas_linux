@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ETL Dashboard · Acceso</title>
+  <link rel="stylesheet" href="/static/common.css">
+  <style>
+    main { max-width: 380px; margin: 80px auto; padding: 0 16px; }
+    .login-box { background: #fff; border-radius: 10px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    .login-box h2 { margin: 0 0 4px; font-size: 20px; }
+    .login-box .sub { color: #64748b; font-size: 13px; margin-bottom: 16px; }
+    .login-box label { display: block; font-size: 13px; color: #475569; margin: 12px 0 4px; }
+    .login-box input { width: 100%; box-sizing: border-box; }
+    .login-box .btn { width: 100%; margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="login-box">
+      <h2>ETL Dashboard</h2>
+      <div class="sub">Ingresa con tu usuario del panel</div>
+      <div class="err" id="loginError"></div>
+      <label>Usuario</label>
+      <input type="text" id="username" autocomplete="username" autofocus>
+      <label>Password</label>
+      <input type="password" id="password" autocomplete="current-password">
+      <button class="btn" id="loginBtn">Entrar</button>
+    </div>
+  </main>
+  <script src="/static/common.js"></script>
+  <script>
+    async function doLogin() {
+      const err = document.getElementById('loginError');
+      err.textContent = '';
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('username').value.trim(),
+          password: document.getElementById('password').value,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { err.textContent = data.detail || 'Usuario o password incorrectos.'; return; }
+      location.href = data.role === 'admin' ? '/panel' : '/inventario';
+    }
+    document.getElementById('loginBtn').addEventListener('click', doLogin);
+    document.getElementById('password').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+    document.getElementById('username').addEventListener('keydown', function (e) { if (e.key === 'Enter') document.getElementById('password').focus(); });
+  </script>
+</body>
+</html>

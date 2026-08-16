@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ETL · Dashboard</title>
+  <link rel="stylesheet" href="/static/common.css">
+</head>
+<body>
+  <header>
+    <h1>ETL Dashboard</h1>
+    <div class="userbar" id="userbar"></div>
+  </header>
+  <main>
+    <div class="cards">
+      <div class="card"><div class="label">Estado última corrida</div><div class="value" id="lastStatus">-</div></div>
+      <div class="card"><div class="label">Tablas ok</div><div class="value" id="tablesOk">-</div></div>
+      <div class="card"><div class="label">Filas cargadas</div><div class="value" id="totalRows">-</div></div>
+    </div>
+    <h2>Últimas corridas</h2>
+    <table id="executions">
+      <thead><tr><th>#</th><th>Estado</th><th>Inicio</th><th>Fin</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <h2>Progreso por tabla</h2>
+    <table id="progress">
+      <thead><tr><th>Tabla</th><th>Estado</th><th>Filas</th><th>Delta</th><th>Actualizado</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <h2>Extracción en vivo</h2>
+    <div class="cards">
+      <div class="card"><div class="label">Fase</div><div class="value" id="livePhase">idle</div></div>
+      <div class="card"><div class="label">Tabla</div><div class="value" id="liveTable">-</div></div>
+      <div class="card"><div class="label">Filas leídas</div><div class="value" id="liveRows">0</div></div>
+    </div>
+    <div id="liveBarWrap" style="display:none; background:#fff; border-radius:8px; padding:12px; box-shadow:0 1px 3px rgba(0,0,0,.1);">
+      <div style="font-size:13px; color:#64748b; margin-bottom:6px;" id="liveChunkLabel">chunk 0/0</div>
+      <div style="background:#eef2f6; border-radius:999px; height:10px; overflow:hidden;">
+        <div id="liveBar" style="background:#2563eb; height:100%; width:0%; transition:width .4s;"></div>
+      </div>
+    </div>
+    <h2>Detalle por corrida</h2>
+    <select id="runSelect" onchange="loadRunDetail()"></select>
+    <table id="runDetail" style="margin-top:8px;">
+      <thead><tr><th>Tabla</th><th>Estado</th><th>Chunks</th><th>Filas</th><th>Duración (s)</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </main>
+  <script src="/static/common.js"></script>
+  <script>
+    async function init() {
+      const user = await bootPage(['admin']);
+      if (!user) return;
+      renderUserbar(user);
+      refresh();
+      refreshLive();
+      setInterval(refresh, 30000);
+      setInterval(refreshLive, 2000);
+    }
+
+    async function refresh() {
+      const res = await api('/api/dashboard');
+      const data = await res.json();
+
+      const last = data.last_execution;
+      const st = document.getElementById('lastStatus');
+      if (last.status) {
+        st.textContent = last.status;
+        st.className = 'value ' + last.status;
+      } else {
+        st.textContent = 'sin corridas';
+      }
+
+      const ok = data.progress.filter(p => p.status === 'ok').length;
+      document.getElementById('tablesOk').textContent = ok + ' / ' + data.progress.length;
+      document.getElementById('totalRows').textContent =
+        data.progress.reduce((s, p) => s + (p.rows_loaded || 0), 0);
+
+      const eb = document.querySelector('#executions tbody');
+      eb.innerHTML = data.executions.map(e =>
+        '<tr><td>' + e.id + '</td><td><span class="badge ' + e.status + '">' + e.status +
+        '</span></td><td>' + e.start_time + '</td><td>' + e.end_time + '</td></tr>').join('');
+
+      const pb = document.querySelector('#progress tbody');
+      pb.innerHTML = data.progress.map(p =>
+        '<tr><td>' + p.table_name + '</td><td><span class="badge ' + p.status + '">' + p.status +
+        '</span></td><td>' + p.rows_loaded + '</td><td>' + p.last_delta_value +
+        '</td><td>' + p.updated_at + '</td></tr>').join('');
+
+      const sel = document.getElementById('runSelect');
+      const prev = sel.value;
+      sel.innerHTML = data.executions.map(e =>
+        '<option value="' + e.id + '">#' + e.id + ' ' + e.status + ' (' + e.start_time + ')</option>').join('');
+      if (prev && sel.querySelector('option[value="' + prev + '"]')) { sel.value = prev; }
+      if (!sel.value && sel.options.length) { sel.value = sel.options[0].value; }
+      if (sel.options.length) { loadRunDetail(); }
+    }
+
+    async function loadRunDetail() {
+      const runId = document.getElementById('runSelect').value;
+      if (!runId) return;
+      const res = await api('/api/tables?run_id=' + runId);
+      const rows = await res.json();
+      const tb = document.querySelector('#runDetail tbody');
+      tb.innerHTML = rows.map(r =>
+        '<tr><td>' + r.table_name + '</td><td><span class="badge ' + r.status + '">' + r.status +
+        '</span></td><td>' + (r.chunks_ok || 0) + '/' + (r.chunks_total || 0) +
+        '</td><td>' + (r.rows_extracted || 0) + '</td><td>' + (r.duration_s || 0) + '</td></tr>').join('');
+    }
+
+    async function refreshLive() {
+      const res = await api('/api/live');
+      const l = await res.json();
+      document.getElementById('livePhase').textContent = l.phase;
+      document.getElementById('liveTable').textContent = l.table || '-';
+      document.getElementById('liveRows').textContent = l.rows_so_far || 0;
+      const wrap = document.getElementById('liveBarWrap');
+      if (l.running && l.chunk_total > 0) {
+        wrap.style.display = 'block';
+        document.getElementById('liveChunkLabel').textContent =
+          'chunk ' + l.chunk_index + '/' + l.chunk_total + ' · ' + (l.elapsed_s || 0) + ' s';
+        document.getElementById('liveBar').style.width =
+          Math.round((l.chunk_index / l.chunk_total) * 100) + '%';
+      } else {
+        wrap.style.display = 'none';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

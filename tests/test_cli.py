@@ -27,17 +27,18 @@ def test_migrate_applies_and_is_idempotent(cli_env, capsys):
     assert cli.cmd_migrate(cfg_path) == 0
     out1 = capsys.readouterr().out
     assert "[ok]" in out1
-    assert "Migraciones aplicadas: 3" in out1
+    assert "Migraciones aplicadas: 4" in out1
 
     eng = create_engine(f"sqlite:///{db_path}")
     with eng.connect() as conn:
         tables = {r[0] for r in conn.execute(
             text("SELECT name FROM sqlite_master WHERE type='table'"))}
-        assert {"etl_execution", "etl_progress", "etl_execution_tables", "schema_migrations"} <= tables
+        assert {"etl_execution", "etl_progress", "etl_execution_tables",
+                "app_users", "schema_migrations"} <= tables
         cols = [r[1] for r in conn.execute(text("PRAGMA table_info(etl_progress)"))]
         assert "last_delta_value" in cols
         versions = [r[0] for r in conn.execute(text("SELECT version FROM schema_migrations"))]
-        assert len(versions) == 3
+        assert len(versions) == 4
 
     capsys.readouterr()
     assert cli.cmd_migrate(cfg_path) == 0

@@ -1,0 +1,43 @@
+body { font-family: system-ui, sans-serif; margin: 0; background: #f4f6f8; color: #1a2330; }
+header { background: #1a2330; color: #fff; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+header h1 { margin: 0; font-size: 20px; }
+header .userbar { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #cbd5e1; }
+header .userbar button, header .userbar a { background: #334155; color: #e2e8f0; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 13px; }
+main { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+.cards { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.card { flex: 1; min-width: 160px; background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.card .label { color: #64748b; font-size: 12px; text-transform: uppercase; }
+.card .value { font-size: 24px; font-weight: 600; margin-top: 4px; }
+.ok { color: #15803d; }
+.failed { color: #b91c1c; }
+.running { color: #b45309; }
+table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+th { background: #eef2f6; }
+h2 { font-size: 16px; margin: 24px 0 8px; }
+.badge { padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+.toolbar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+select, input[type=text], input[type=password] { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: #fff; }
+.btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; background: #2563eb; color: #fff; }
+.btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.btn.sync { background: #15803d; }
+.btn.danger { background: #b91c1c; }
+tr.low td { background: #fef2f2; }
+.pager { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 14px; color: #475569; }
+.pager button { padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; cursor: pointer; }
+.pager button:disabled { color: #94a3b8; cursor: not-allowed; }
+#syncStatus { font-size: 13px; color: #64748b; margin-bottom: 12px; }
+.hint { font-size: 13px; color: #64748b; }
+.err { color: #b91c1c; font-size: 13px; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.6); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.modal { background: #fff; border-radius: 10px; padding: 24px; width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+.modal h3 { margin: 0 0 12px; font-size: 16px; }
+.modal label { display: block; font-size: 13px; color: #475569; margin: 10px 0 4px; }
+.modal input { width: 100%; box-sizing: border-box; }
+.modal .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.notice { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+header .userbar .user-menu { position: relative; }
+.user-menu-btn { background: #334155; color: #e2e8f0; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.dropdown { position: absolute; right: 0; top: calc(100% + 4px); background: #fff; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 6px; z-index: 60; min-width: 190px; }
+.dropdown .dropdown-item { display: block; width: 100%; text-align: left; background: none; border: none; padding: 8px 12px; font-size: 14px; color: #1a2330; cursor: pointer; border-radius: 6px; }
+.dropdown .dropdown-item:hover { background: #eef2f6; }

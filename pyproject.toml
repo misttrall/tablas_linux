@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tablas-etl"
-version = "0.3.0"
+version = "0.4.0"
 description = "Motor ETL multi-ERP y multi-base de datos (SQL Server, PostgreSQL, MySQL, SQLite)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -21,6 +21,8 @@ dependencies = [
     "requests",
     "fastapi",
     "uvicorn",
+    "PyJWT",
+    "bcrypt",
 ]
 
 [project.optional-dependencies]
@@ -33,7 +35,7 @@ dev = [
 etl = "cli:main"
 
 [tool.setuptools]
-packages = ["db", "db.sinks", "sources", "sources.sap", "sources.generic", "utils", "dashboard", "derived"]
+packages = ["db", "db.sinks", "sources", "sources.sap", "sources.generic", "utils", "dashboard", "dashboard.auth", "derived"]
 py-modules = ["cli"]
 
 [tool.ruff]
