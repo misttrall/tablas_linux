@@ -1,4 +1,5 @@
 import json
+import os
 
 import pytest
 from sqlalchemy import create_engine, text
@@ -94,3 +95,60 @@ def test_main_no_command_prints_help(capsys):
     assert cli.main([]) == 0
     out = capsys.readouterr().out
     assert "usage:" in out
+
+
+def _cli_bi_env(tmp_path):
+    cfg_path = tmp_path / "config.json"
+    db_path = tmp_path / "db.sqlite"
+    cfg = {
+        "environment": "qa",
+        "source": {"type": "csv", "config": {"directory": str(tmp_path)}},
+        "database": {"dialect": "sqlite", "database": str(db_path)},
+        "tables": [], "fields": {},
+        "derived": [{"name": "inv_bodega", "keys": ["MATNR"]}],
+    }
+    cfg_path.write_text(json.dumps(cfg))
+    engine = create_engine(f"sqlite:///{db_path}")
+    import pandas as pd
+    pd.DataFrame([{"MATNR": "M1", "ValorTotal": 1.0}]).to_sql("inv_bodega", engine, index=False)
+    return str(cfg_path)
+
+
+def test_cli_bi_manifest(tmp_path, capsys):
+    cfg_path = _cli_bi_env(tmp_path)
+    assert cli.cmd_bi(cfg_path, "manifest") == 0
+    out = capsys.readouterr().out
+    assert '"inv_bodega"' in out
+    assert '"materialized": true' in out
+
+
+def test_cli_bi_export(tmp_path, capsys):
+    cfg_path = _cli_bi_env(tmp_path)
+    out_dir = str(tmp_path / "bi_out")
+    assert cli.cmd_bi(cfg_path, "export", out_dir=out_dir) == 0
+    out = capsys.readouterr().out
+    assert "inv_bodega" in out
+    assert os.path.exists(os.path.join(out_dir, "inv_bodega.csv"))
+
+
+def test_cli_bi_guide(tmp_path, capsys):
+    cfg_path = _cli_bi_env(tmp_path)
+    assert cli.cmd_bi(cfg_path, "guide") == 0
+    out = capsys.readouterr().out
+    assert "Guía de conectividad" in out
+    assert "inv_bodega" in out
+
+
+def test_cli_main_bi(tmp_path, monkeypatch):
+    cfg_path = _cli_bi_env(tmp_path)
+    captured = {}
+
+    def fake_bi(config_path, action, out_dir="output/bi"):
+        captured["config_path"] = config_path
+        captured["action"] = action
+        captured["out_dir"] = out_dir
+        return 0
+
+    monkeypatch.setattr(cli, "cmd_bi", fake_bi)
+    assert cli.main(["bi", "manifest", "--config", cfg_path]) == 0
+    assert captured == {"config_path": cfg_path, "action": "manifest", "out_dir": "output/bi"}

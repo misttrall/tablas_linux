@@ -249,6 +249,34 @@ def cmd_importar_minimos(config_path, archivo, hoja, tabla="stock_minimo",
     return 0
 
 
+def cmd_bi(config_path, action, out_dir="output/bi"):
+    from bi.export import export_views
+    from bi.guide import render_guide
+    from bi.manifest import build_manifest, manifest_to_json
+
+    config = load_config(config_path)
+    engine = _engine_from_config(config)
+
+    if action == "manifest":
+        print(manifest_to_json(build_manifest(config, engine)))
+        return 0
+    if action == "export":
+        try:
+            results = export_views(config, engine, out_dir=out_dir)
+        except ValueError as e:
+            print(f"[error] {e}")
+            return 1
+        for r in results:
+            extra = f", parquet={r['parquet_path']}" if r["parquet_path"] else ""
+            print(f"[ok] '{r['name']}': {r['rows']} filas -> {r['csv_path']}{extra}")
+        return 0
+    if action == "guide":
+        print(render_guide(config))
+        return 0
+    print("Uso: etl bi {manifest|export|guide}")
+    return 1
+
+
 def _add_config_arg(subparser):
     subparser.add_argument(
         "--config", default=None,
@@ -364,6 +392,22 @@ def main(argv=None):
                                help="Columna de origen del área (por defecto: area)")
     _add_config_arg(import_parser)
 
+    bi_parser = subparsers.add_parser(
+        "bi", help="Entregable BI: manifiesto, export y guía de conectividad para Power BI")
+    bi_sub = bi_parser.add_subparsers(dest="bi_action", required=True)
+
+    bi_manifest = bi_sub.add_parser("manifest", help="Genera el manifiesto del dataset")
+    _add_config_arg(bi_manifest)
+    bi_manifest.add_argument("--out", default=None, help=argparse.SUPPRESS)
+
+    bi_export = bi_sub.add_parser("export", help="Exporta las vistas a CSV/Parquet")
+    bi_export.add_argument("--out-dir", default="output/bi",
+                           help="Directorio de salida (por defecto: output/bi)")
+    _add_config_arg(bi_export)
+
+    bi_guide = bi_sub.add_parser("guide", help="Emite la guía de conectividad de Power BI")
+    _add_config_arg(bi_guide)
+
     users_parser = subparsers.add_parser(
         "users", help="Gestiona usuarios del dashboard (app_users de la BD destino)")
     users_sub = users_parser.add_subparsers(dest="users_action")
@@ -402,6 +446,14 @@ def main(argv=None):
     if args.command == "importar-minimos":
         return cmd_importar_minimos(args.config, args.archivo, args.hoja, args.tabla,
                                     args.col_material, args.col_stock, args.col_area)
+    if args.command == "bi":
+        if args.bi_action == "manifest":
+            return cmd_bi(args.config, "manifest")
+        if args.bi_action == "export":
+            return cmd_bi(args.config, "export", out_dir=args.out_dir)
+        if args.bi_action == "guide":
+            return cmd_bi(args.config, "guide")
+        return 1
     if args.command == "users":
         return cmd_users(args)
 
