@@ -5,6 +5,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 from bi.export import export_views
+from bi.guide import render_guide
 from bi.manifest import build_manifest, manifest_to_json, suggested_measures
 
 
@@ -123,3 +124,39 @@ def test_export_views_none_materialized_raises(tmp_path):
     import pytest
     with pytest.raises(ValueError):
         export_views(config, engine, out_dir=str(tmp_path / "out"))
+
+
+def _guide_config(tmp_path):
+    return {"environment": "qa",
+            "source": {"type": "csv", "config": {"directory": str(tmp_path)}},
+            "database": {"dialect": "mssql", "server": "192.168.1.10",
+                         "database": "dw_cliente", "user": "bi_user"},
+            "tables": [], "fields": {},
+            "derived": [{"name": "inv_bodega", "tab": "Inventario", "keys": ["MATNR"]},
+                        {"name": "ventas", "tab": "Ventas", "keys": ["ID"]}]}
+
+
+def test_guide_render_mssql(tmp_path):
+    guide = render_guide(_guide_config(tmp_path))
+    assert "mssql" in guide
+    assert "192.168.1.10" in guide
+    assert "dw_cliente" in guide
+    assert "inv_bodega" in guide
+    assert "Inventario" in guide
+    assert "ventas" in guide
+    assert "Power BI Service" in guide
+
+
+def test_guide_render_sqlite_advises_migration(tmp_path):
+    config = _guide_config(tmp_path)
+    config["database"]["dialect"] = "sqlite"
+    guide = render_guide(config)
+    assert "sqlite" in guide
+    assert "no recomendado" in guide
+    assert "mssql" in guide.lower() or "SQL Server" in guide
+
+
+def test_guide_render_defaults_views(tmp_path):
+    config = _guide_config(tmp_path)
+    guide = render_guide(config)
+    assert "MATNR" in guide
