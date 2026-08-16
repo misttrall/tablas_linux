@@ -275,22 +275,32 @@ def api_tables(run_id: int, user=Depends(require_admin)):
     return [dict(zip(r._mapping.keys(), r)) for r in rows]
 
 
-def _first_derived_view(config):
-    from derived.views import derived_views
-    views = derived_views(config)
-    return views[0] if views else None
-
-
-def _inventory_frame():
+def _view_frame(view=None):
     config = load_config(os.environ.get("ETL_CONFIG"))
-    view = _first_derived_view(config)
     if view is None:
-        return None, None
+        from derived.views import derived_views
+        views = derived_views(config)
+        if not views:
+            return None, None
+        view = views[0]
     from derived.db import read_table, table_exists
     name = view.get("name", "inv_bodega")
     if not table_exists(get_engine(), name):
-        return None, name
+        return None, view
     return read_table(get_engine(), name), view
+
+
+def _inventory_frame():
+    return _view_frame()
+
+
+def _inventory_frame_for(name):
+    from derived.views import derived_view_by_name
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    view = derived_view_by_name(config, name)
+    if view is None:
+        return None, None
+    return _view_frame(view)
 
 
 def _inventory_alerts_config(view):
@@ -350,7 +360,8 @@ def _inventory_summary(df, view):
     total_field = cfg["total_field"]
     _coerce_numeric(df, [total_field])
     total_rows = int(len(df))
-    materials = int(df["MATNR"].nunique()) if "MATNR" in df.columns else total_rows
+    row_label = view.get("row_label", "MATNR")
+    materials = int(df[row_label].nunique()) if row_label in df.columns else total_rows
     total_value = float(df[total_field].fillna(0).sum()) if total_field in df.columns else 0.0
     alerts = df[_inventory_alert_mask(df, cfg)]
     risk = float(alerts[total_field].fillna(0).sum()) if total_field in alerts.columns else 0.0
@@ -424,6 +435,60 @@ def api_inventory_items(centro: str = "", almacen: str = "", area: str = "",
 @app.get("/api/inventory/alerts")
 def api_inventory_alerts(limit: int = 500, q: str = "", user=Depends(require_user)):
     data = api_inventory_items(low_only=True, q=q, limit=limit, offset=0)
+    return {"alerts": data.get("rows", [])}
+
+
+@app.get("/api/derived/{name}/summary")
+def api_derived_summary(name: str, user=Depends(require_user)):
+    df, view = _inventory_frame_for(name)
+    if view is None:
+        raise HTTPException(status_code=404, detail="vista_inexistente")
+    if df is None:
+        return {"available": False, "reason": "table_missing", "table": name}
+    return _inventory_summary(df, view)
+
+
+@app.get("/api/derived/{name}/filters")
+def api_derived_filters(name: str, user=Depends(require_user)):
+    df, view = _inventory_frame_for(name)
+    if view is None:
+        raise HTTPException(status_code=404, detail="vista_inexistente")
+    if df is None:
+        return {"available": False}
+    cols = _inventory_filter_columns(view)
+    out = {}
+    for key, col in cols.items():
+        out[key] = sorted(df[col].dropna().astype(str).unique().tolist()) if col in df.columns else []
+    out["available"] = True
+    out["columns"] = cols
+    return out
+
+
+@app.get("/api/derived/{name}/items")
+def api_derived_items(name: str, centro: str = "", almacen: str = "", area: str = "",
+                      low_only: bool = False, q: str = "", limit: int = 100, offset: int = 0,
+                      user=Depends(require_user)):
+    df, view = _inventory_frame_for(name)
+    if view is None:
+        raise HTTPException(status_code=404, detail="vista_inexistente")
+    if df is None:
+        return {"available": False, "reason": "table_missing", "table": name}
+    rows, cfg, cols = _filter_inventory(df, view, centro, almacen, area, low_only, q)
+    total = int(len(rows))
+    low_only_count = int(len(rows[_inventory_alert_mask(rows, cfg)]))
+    page = rows.iloc[offset:offset + limit].fillna("")
+    return {
+        "available": True, "table": name, "total": total,
+        "offset": offset, "limit": limit, "low_only_count": low_only_count,
+        "rows": page.to_dict(orient="records"),
+    }
+
+
+@app.get("/api/derived/{name}/alerts")
+def api_derived_alerts(name: str, limit: int = 500, q: str = "", user=Depends(require_user)):
+    data = api_derived_items(name=name, low_only=True, q=q, limit=limit, offset=0)
+    if isinstance(data, dict) and data.get("available") is False:
+        return {"alerts": []}
     return {"alerts": data.get("rows", [])}
 
 

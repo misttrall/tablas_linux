@@ -154,6 +154,48 @@ def inventory_client(tmp_path, monkeypatch):
     return _login_admin(TestClient(dashboard_app.app))
 
 
+def test_inventory_summary_uses_row_label(inventory_client):
+    engine = dashboard_app.get_engine()
+    with engine.begin() as conn:
+        pd.DataFrame([
+            {"ID": "X1", "Descripcion": "A", "Centro": "IN01", "StockLibre": 3,
+             "stock_minimo": 5, "ValorTotal": 30.0, "Area": "Taller"},
+        ]).to_sql("otra_vista", conn, index=False)
+    cfg_path = os.environ["ETL_CONFIG"]
+    cfg = json.load(open(cfg_path))
+    cfg["derived"] = [
+        {"name": "inv_bodega", "alerts": {
+            "enabled": True, "min_field": "stock_minimo",
+            "qty_field": "StockLibre", "total_field": "ValorTotal"}},
+        {"name": "otra_vista", "row_label": "ID", "alerts": {
+            "enabled": True, "min_field": "stock_minimo",
+            "qty_field": "StockLibre", "total_field": "ValorTotal"}},
+    ]
+    json.dump(cfg, open(cfg_path, "w"))
+
+    res = inventory_client.get("/api/derived/otra_vista/summary")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["available"] is True
+    assert data["table"] == "otra_vista"
+    assert data["total_materials"] == 1
+
+
+def test_derived_endpoints_unknown_view(client):
+    res = client.get("/api/derived/inexistente/summary")
+    assert res.status_code == 404
+
+
+def test_derived_endpoints_table_missing(inventory_client):
+    cfg_path = os.environ["ETL_CONFIG"]
+    cfg = json.load(open(cfg_path))
+    cfg["derived"] = [{"name": "no_materializada"}]
+    json.dump(cfg, open(cfg_path, "w"))
+    res = inventory_client.get("/api/derived/no_materializada/summary")
+    assert res.status_code == 200
+    assert res.json()["available"] is False
+
+
 def test_inventory_summary(inventory_client):
     res = inventory_client.get("/api/inventory")
     assert res.status_code == 200
