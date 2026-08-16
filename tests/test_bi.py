@@ -71,6 +71,30 @@ def test_manifest_view_not_materialized(tmp_path):
     assert v["columns"] == []
 
 
+def _unreachable_engine():
+    class _Unreachable:
+        class _Dialect:
+            name = "mssql"
+
+        dialect = _Dialect()
+
+        def connect(self):
+            raise RuntimeError("no conectado")
+
+    return _Unreachable()
+
+
+def test_manifest_unreachable_db_reports_not_materialized(tmp_path, capsys):
+    config, _ = _engine_with_views(tmp_path, {"name": "inv_bodega"}, {})
+    m = build_manifest(config, _unreachable_engine())
+    v = m["views"][0]
+    assert v["name"] == "inv_bodega"
+    assert v["materialized"] is False
+    assert v["row_count"] == 0
+    assert v["columns"] == []
+    assert "no accesible" in capsys.readouterr().err
+
+
 def test_suggested_measures_skips_missing_columns(tmp_path):
     config, engine = _engine_with_views(tmp_path, {"name": "vista_sin_alertas"}, {})
     view = {"name": "vista_sin_alertas"}
@@ -124,6 +148,16 @@ def test_export_views_none_materialized_raises(tmp_path):
     import pytest
     with pytest.raises(ValueError):
         export_views(config, engine, out_dir=str(tmp_path / "out"))
+
+
+def test_export_views_unreachable_db_warns(tmp_path, capsys):
+    config, _ = _views_for_export(tmp_path)
+    import pytest
+    with pytest.raises(ValueError):
+        export_views(config, _unreachable_engine(), out_dir=str(tmp_path / "out"))
+    err = capsys.readouterr().err
+    assert "no accesible" in err
+    assert "inv_bodega" in err
 
 
 def _guide_config(tmp_path):

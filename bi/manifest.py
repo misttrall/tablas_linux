@@ -1,5 +1,6 @@
 """Manifiesto del dataset BI: lee config['derived'] y describe cada vista para Power BI."""
 
+import sys
 from datetime import datetime, timezone
 
 from derived.db import read_table, table_exists
@@ -30,7 +31,13 @@ def suggested_measures(view, columns=None):
 
 def _view_entry(config, view, engine):
     name = view.get("name", "inv_bodega")
-    if not table_exists(engine, name):
+    try:
+        exists = table_exists(engine, name)
+    except Exception as e:
+        print(f"warn: BD destino no accesible; vista '{name}' marcada como no materializada: {e}",
+              file=sys.stderr)
+        exists = False
+    if not exists:
         return {
             "name": name, "tab": view_tab_label(view), "table": name,
             "materialized": False, "row_count": 0,

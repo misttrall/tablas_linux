@@ -28,7 +28,13 @@ def export_views(config, engine, out_dir="output/bi", views=None):
     results = []
     for view in views:
         name = view.get("name", "inv_bodega")
-        if not table_exists(engine, name):
+        try:
+            exists = table_exists(engine, name)
+        except Exception as e:
+            print(f"warn: vista '{name}' no accesible (¿BD destino no conectada?): {e}",
+                  file=sys.stderr)
+            continue
+        if not exists:
             print(f"warn: vista '{name}' no materializada; export omitido", file=sys.stderr)
             continue
         df = read_table(engine, name)
