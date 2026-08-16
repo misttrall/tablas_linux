@@ -416,3 +416,26 @@ def test_derivadas_page_served(client):
     res = client.get("/derivadas", follow_redirects=False)
     assert res.status_code == 200
     assert "Pestañas" in res.text or "derivada" in res.text
+
+
+def test_branding_defaults(client):
+    res = client.get("/api/branding")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["title"] == "ETL Dashboard"
+    assert data["color"] == ""
+    assert data["footer"] == ""
+
+
+def test_branding_from_config(client):
+    cfg_path = os.environ["ETL_CONFIG"]
+    cfg = json.load(open(cfg_path))
+    cfg["dashboard"] = {"title": "Bodegas ACME", "color": "#123456",
+                        "footer": "© ACME 2026", "logo": "/static/logo.png"}
+    json.dump(cfg, open(cfg_path, "w"))
+    res = client.get("/api/branding")
+    data = res.json()
+    assert data["title"] == "Bodegas ACME"
+    assert data["color"] == "#123456"
+    assert data["footer"] == "© ACME 2026"
+    assert data["logo"] == "/static/logo.png"

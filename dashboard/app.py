@@ -253,6 +253,18 @@ def api_health():
     return {"status": "ok"}
 
 
+@app.get("/api/branding")
+def api_branding():
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    dash = config.get("dashboard") or {}
+    return {
+        "title": dash.get("title", "ETL Dashboard"),
+        "logo": dash.get("logo", ""),
+        "color": dash.get("color", ""),
+        "footer": dash.get("footer", ""),
+    }
+
+
 @app.get("/api/live")
 def api_live(user=Depends(require_user)):
     _recover_stale()
