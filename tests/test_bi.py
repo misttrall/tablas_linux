@@ -1,8 +1,10 @@
 import json
+import os
 
 import pandas as pd
 from sqlalchemy import create_engine
 
+from bi.export import export_views
 from bi.manifest import build_manifest, manifest_to_json, suggested_measures
 
 
@@ -81,3 +83,43 @@ def test_manifest_to_json_roundtrip(tmp_path):
     data = json.loads(manifest_to_json(m))
     assert data["dialect"] == "sqlite"
     assert data["views"][0]["name"] == "inv_bodega"
+
+
+def _views_for_export(tmp_path):
+    db_path = tmp_path / "db.sqlite"
+    engine = create_engine(f"sqlite:///{db_path}")
+    pd.DataFrame([{"MATNR": "M1", "ValorTotal": 1.0},
+                  {"MATNR": "M2", "ValorTotal": 2.0}]).to_sql("inv_bodega", engine, index=False)
+    config = {"environment": "qa",
+              "source": {"type": "csv", "config": {"directory": str(tmp_path)}},
+              "database": {"dialect": "sqlite", "database": str(db_path)},
+              "tables": [], "fields": {},
+              "derived": [{"name": "inv_bodega"}, {"name": "no_materializada"}]}
+    return config, engine
+
+
+def test_export_views_csv(tmp_path):
+    config, engine = _views_for_export(tmp_path)
+    out_dir = str(tmp_path / "bi_out")
+    results = export_views(config, engine, out_dir=out_dir)
+    assert len(results) == 1
+    assert results[0]["name"] == "inv_bodega"
+    assert results[0]["rows"] == 2
+    assert os.path.exists(results[0]["csv_path"])
+    with open(results[0]["csv_path"]) as f:
+        content = f.read()
+    assert "MATNR" in content
+    assert "M2" in content
+    assert not os.path.exists(os.path.join(out_dir, "no_materializada.csv"))
+
+
+def test_export_views_none_materialized_raises(tmp_path):
+    db_path = tmp_path / "db2.sqlite"
+    engine = create_engine(f"sqlite:///{db_path}")
+    config = {"environment": "qa",
+              "source": {"type": "csv", "config": {"directory": str(tmp_path)}},
+              "database": {"dialect": "sqlite", "database": str(db_path)},
+              "tables": [], "fields": {}, "derived": [{"name": "no_existe"}]}
+    import pytest
+    with pytest.raises(ValueError):
+        export_views(config, engine, out_dir=str(tmp_path / "out"))
