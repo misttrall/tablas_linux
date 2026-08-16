@@ -41,7 +41,10 @@ async function selectView(name) {
   loadViews();
 }
 
-function initDerivadas() {
+async function initDerivadas() {
+  const u = await bootPage(['user', 'admin']);
+  if (!u) return;
+  renderUserbar(u);
   renderBranding();
   loadViews();
 }

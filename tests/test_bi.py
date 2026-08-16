@@ -34,7 +34,7 @@ def test_manifest_single_view(tmp_path):
     assert v["materialized"] is True
     assert v["row_count"] == 1
     matnr = next(c for c in v["columns"] if c["name"] == "MATNR")
-    assert matnr["dtype"] in {"str", "object"}
+    assert matnr["dtype"].startswith("VARCHAR") or matnr["dtype"] in {"TEXT", "VARCHAR"}
     assert v["keys"] == []
     assert v["measures"] == []
 
@@ -95,6 +95,22 @@ def test_manifest_unreachable_db_reports_not_materialized(tmp_path, capsys):
     assert "no accesible" in capsys.readouterr().err
 
 
+def test_manifest_metadata_read_failure_degrades(tmp_path, capsys, monkeypatch):
+    views = {"inv_bodega": [{"MATNR": "M1", "ValorTotal": 1.0}]}
+    config, engine = _engine_with_views(tmp_path, {"name": "inv_bodega"}, views)
+
+    def boom(*a, **k):
+        raise RuntimeError("lectura falló")
+
+    monkeypatch.setattr("bi.manifest.inspect", boom)
+    m = build_manifest(config, engine)
+    v = m["views"][0]
+    assert v["materialized"] is False
+    assert v["row_count"] == 0
+    assert v["columns"] == []
+    assert "no accesible" in capsys.readouterr().err
+
+
 def test_suggested_measures_skips_missing_columns(tmp_path):
     config, engine = _engine_with_views(tmp_path, {"name": "vista_sin_alertas"}, {})
     view = {"name": "vista_sin_alertas"}
@@ -136,6 +152,27 @@ def test_export_views_csv(tmp_path):
     assert "MATNR" in content
     assert "M2" in content
     assert not os.path.exists(os.path.join(out_dir, "no_materializada.csv"))
+
+
+def test_export_views_excel_dir_per_view(tmp_path):
+    config, engine = _views_for_export(tmp_path)
+    pd.DataFrame([{"ID": 1, "Monto": 10.0}]).to_sql("ventas", engine, index=False)
+    excel_dir = tmp_path / "excel_out"
+    config["derived"] = [
+        {"name": "inv_bodega", "excel": {"path": str(excel_dir / "inventario.xlsx")}},
+        {"name": "ventas"},
+        {"name": "no_materializada"},
+    ]
+    out_dir = str(tmp_path / "bi_out")
+    results = export_views(config, engine, out_dir=out_dir)
+    assert [r["name"] for r in results] == ["inv_bodega", "ventas"]
+    inv = next(r for r in results if r["name"] == "inv_bodega")
+    ventas = next(r for r in results if r["name"] == "ventas")
+    assert inv["csv_path"] == str(excel_dir / "inv_bodega.csv")
+    assert os.path.exists(str(excel_dir / "inv_bodega.csv"))
+    assert not os.path.exists(os.path.join(out_dir, "inv_bodega.csv"))
+    assert ventas["csv_path"] == os.path.join(out_dir, "ventas.csv")
+    assert os.path.exists(os.path.join(out_dir, "ventas.csv"))
 
 
 def test_export_views_none_materialized_raises(tmp_path):

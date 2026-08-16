@@ -48,6 +48,16 @@ function renderBranding() {
     if (b.title) document.title = b.title;
     const t = document.getElementById('appTitle');
     if (t && b.title) t.textContent = b.title;
+    if (b.color) document.documentElement.style.setProperty('--brand-color', b.color);
+    const img = document.getElementById('appLogo');
+    if (img) {
+      if (b.logo) {
+        img.src = b.logo;
+        img.style.display = 'inline-block';
+      } else {
+        img.style.display = 'none';
+      }
+    }
     const f = document.getElementById('appFooter');
     if (f && b.footer) f.textContent = b.footer;
   }).catch(function () {});

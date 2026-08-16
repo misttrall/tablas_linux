@@ -3,15 +3,13 @@
 import sys
 from datetime import datetime, timezone
 
-from derived.db import read_table, table_exists
+from sqlalchemy import inspect, text
+
+from derived.db import table_exists
 from derived.views import derived_views, view_tab_label
 
 _DEFAULT_TOTAL_FIELD = "ValorTotal"
 _DEFAULT_QTY_FIELD = "StockLibre"
-
-
-def column_types(df):
-    return [{"name": c, "dtype": str(df[c].dtype)} for c in df.columns]
 
 
 def suggested_measures(view, columns=None):
@@ -33,6 +31,10 @@ def _view_entry(config, view, engine):
     name = view.get("name", "inv_bodega")
     try:
         exists = table_exists(engine, name)
+        if exists:
+            cols = inspect(engine).get_columns(name)
+            with engine.connect() as conn:
+                row_count = conn.execute(text(f"SELECT COUNT(*) FROM {name}")).scalar()
     except Exception as e:
         print(f"warn: BD destino no accesible; vista '{name}' marcada como no materializada: {e}",
               file=sys.stderr)
@@ -43,13 +45,12 @@ def _view_entry(config, view, engine):
             "materialized": False, "row_count": 0,
             "columns": [], "keys": list(view.get("keys", [])), "measures": [],
         }
-    df = read_table(engine, name)
     return {
         "name": name, "tab": view_tab_label(view), "table": name,
-        "materialized": True, "row_count": int(len(df)),
-        "columns": column_types(df),
+        "materialized": True, "row_count": int(row_count),
+        "columns": [{"name": c["name"], "dtype": str(c["type"])} for c in cols],
         "keys": list(view.get("keys", [])),
-        "measures": suggested_measures(view, df.columns),
+        "measures": suggested_measures(view, [c["name"] for c in cols]),
     }
 
 

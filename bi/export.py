@@ -37,12 +37,14 @@ def export_views(config, engine, out_dir="output/bi", views=None):
         if not exists:
             print(f"warn: vista '{name}' no materializada; export omitido", file=sys.stderr)
             continue
+        view_dir = _out_dir(view, out_dir)
+        os.makedirs(view_dir, exist_ok=True)
         df = read_table(engine, name)
-        csv_path = os.path.join(out_dir, f"{name}.csv")
+        csv_path = os.path.join(view_dir, f"{name}.csv")
         df.to_csv(csv_path, index=False)
         entry = {"name": name, "rows": int(len(df)), "csv_path": csv_path, "parquet_path": None}
         if parquet_ok:
-            parquet_path = os.path.join(out_dir, f"{name}.parquet")
+            parquet_path = os.path.join(view_dir, f"{name}.parquet")
             df.to_parquet(parquet_path, index=False)
             entry["parquet_path"] = parquet_path
         results.append(entry)
