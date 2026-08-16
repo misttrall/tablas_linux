@@ -35,7 +35,7 @@ dev = [
 etl = "cli:main"
 
 [tool.setuptools]
-packages = ["db", "db.sinks", "sources", "sources.sap", "sources.generic", "utils", "dashboard", "dashboard.auth", "derived"]
+packages = ["db", "db.sinks", "sources", "sources.sap", "sources.generic", "utils", "dashboard", "dashboard.auth", "derived", "bi"]
 py-modules = ["cli"]
 
 [tool.ruff]
