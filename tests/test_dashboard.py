@@ -401,3 +401,18 @@ def test_inventory_not_available_without_derived(client):
     res = client.get("/api/inventory")
     assert res.status_code == 200
     assert res.json()["available"] is False
+
+
+def test_derived_views_endpoint(inventory_client):
+    res = inventory_client.get("/api/derived-views")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["views"][0]["name"] == "inv_bodega"
+    assert data["views"][0]["tab"] == "Inv Bodega"
+    assert data["views"][0]["table"] == "inv_bodega"
+
+
+def test_derivadas_page_served(client):
+    res = client.get("/derivadas", follow_redirects=False)
+    assert res.status_code == 200
+    assert "Pestañas" in res.text or "derivada" in res.text

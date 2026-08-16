@@ -41,3 +41,8 @@ header .userbar .user-menu { position: relative; }
 .dropdown { position: absolute; right: 0; top: calc(100% + 4px); background: #fff; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 6px; z-index: 60; min-width: 190px; }
 .dropdown .dropdown-item { display: block; width: 100%; text-align: left; background: none; border: none; padding: 8px 12px; font-size: 14px; color: #1a2330; cursor: pointer; border-radius: 6px; }
 .dropdown .dropdown-item:hover { background: #eef2f6; }
+.tabs { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
+.tab { padding: 8px 16px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; }
+.tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+#viewMessage { padding: 24px; background: #fff; border-radius: 8px; color: #64748b; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+footer#appFooter { text-align: center; color: #94a3b8; font-size: 13px; padding: 16px; }

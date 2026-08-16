@@ -43,6 +43,16 @@ function formatMoney(v) {
   return (typeof v === 'number' && !isNaN(v)) ? '$' + v.toLocaleString('es-CL', { minimumFractionDigits: 2 }) : '-';
 }
 
+function renderBranding() {
+  fetch('/api/branding').then(function (r) { return r.json(); }).then(function (b) {
+    if (b.title) document.title = b.title;
+    const t = document.getElementById('appTitle');
+    if (t && b.title) t.textContent = b.title;
+    const f = document.getElementById('appFooter');
+    if (f && b.footer) f.textContent = b.footer;
+  }).catch(function () {});
+}
+
 function renderPasswordModal() {
   const div = document.createElement('div');
   div.id = 'passwordModal';

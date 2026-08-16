@@ -20,6 +20,7 @@ from dashboard import auth as auth_pkg
 from dashboard.auth import require_admin, require_user
 from dashboard.auth.dependencies import current_user_or_none
 from db.db_connection import _connection_string
+from derived.views import derived_views, view_tab_label
 from utils.config_loader import load_config
 from utils.live import _live_file, read_live, update_live
 
@@ -278,7 +279,6 @@ def api_tables(run_id: int, user=Depends(require_admin)):
 def _view_frame(view=None):
     config = load_config(os.environ.get("ETL_CONFIG"))
     if view is None:
-        from derived.views import derived_views
         views = derived_views(config)
         if not views:
             return None, None
@@ -584,3 +584,18 @@ def page_panel(user=Depends(current_user_or_none)):
     if user["role"] != "admin":
         raise HTTPException(status_code=403, detail="forbidden")
     return _page("panel.html")
+
+
+@app.get("/api/derived-views")
+def api_derived_views(user=Depends(require_user)):
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    views = [{"name": v.get("name", "inv_bodega"), "tab": view_tab_label(v),
+              "table": v.get("name", "inv_bodega")} for v in derived_views(config)]
+    return {"views": views}
+
+
+@app.get("/derivadas", response_class=HTMLResponse, include_in_schema=False)
+def page_derivadas(user=Depends(current_user_or_none)):
+    if user is None:
+        return RedirectResponse(url="/login", status_code=307)
+    return _page("derivadas.html")
