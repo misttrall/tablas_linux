@@ -269,6 +269,24 @@ python -m cli reporte              # todas las visiones
 python -m cli reporte --tabla inv_bodega   # solo una visión
 ```
 
+## Entregable BI
+
+El servicio "Datos/BI" de Novus cierra con un entregable de Power BI por empresa, modelado por Novus sobre el DWH y parametrizado por `config.derived` (sin nada hardcodeado a `inv_bodega` ni a columnas SAP). El módulo `bi/` genera el material, invocable con `etl bi`:
+
+| Comando | Qué produce |
+|---|---|
+| `etl bi manifest [--config ruta]` | Manifiesto del dataset (JSON): vistas, columnas, tipos, claves y medidas sugeridas, para modelar en Power BI Desktop |
+| `etl bi export [--config ruta]` | Exporta cada vista derivada a CSV y Parquet en `output/bi/` (útil para clientes sin conectividad directa a la BD) |
+| `etl bi guide [--config ruta]` | Guía de conectividad de Power BI por dialecto |
+
+La guía de conectividad (`etl bi guide`) parametriza las instrucciones por la BD destino de la empresa: MSSQL con el conector nativo (modo Importación, DirectQuery si el volumen lo exige, gateway para on-premise), PostgreSQL/MySQL vía driver ODBC, y SQLite como no soportado por Power BI (recomienda migrar el DWH a MSSQL para clientes BI).
+
+El dashboard web es la alternativa white-label para clientes sin Power BI. Su branding vive en `config.dashboard` (bloque opcional: `title`, `logo`, `color`, `footer`), y cada vista derivada declara su pestaña en `tab` y su columna rótulo en `row_label` (opcionales; sin `tab` se deriva un nombre legible de `name`).
+
+Onboarding de un cliente BI: config `config.json` por empresa → `python -m cli migrate` → `python -m cli bootstrap` → materializar y entregar (`python -m cli reporte` + `etl bi manifest|export|guide`, o el dashboard white-label).
+
+Spec del entregable: `docs/superpowers/specs/2026-08-15-entregable-bi-white-label-design.md`.
+
 ## Dashboard web
 
 Dashboard FastAPI (`dashboard/app.py`) que lee `etl_execution`, `etl_progress` y `etl_execution_tables` de la BD destino. No requiere el SDK de SAP; solo acceso a la BD.

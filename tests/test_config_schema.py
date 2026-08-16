@@ -96,3 +96,46 @@ def test_real_and_example_configs_pass():
 def test_load_config_validates_real_config():
     cfg = load_config()
     assert cfg["environment"] in ("qa", "prd")
+
+
+def test_schema_accepts_tab_and_row_label():
+    config = {
+        "source": {"type": "csv", "config": {}},
+        "database": {"dialect": "sqlite", "database": "x.db"},
+        "tables": [], "fields": {},
+        "derived": {
+            "name": "inv_bodega", "tab": "Inventario", "row_label": "MATNR",
+            "columns": [{"as": "MATNR", "source": "MATNR"}],
+        },
+        "dashboard": {"title": "ACME", "logo": "/l.png", "color": "#fff", "footer": "©"},
+    }
+    assert validate_config(config) == []
+
+
+def test_schema_accepts_derived_list():
+    config = {
+        "source": {"type": "csv", "config": {}},
+        "database": {"dialect": "sqlite", "database": "x.db"},
+        "tables": [], "fields": {},
+        "derived": [{"name": "a"}, {"name": "b", "tab": "B"}],
+    }
+    assert validate_config(config) == []
+
+
+def test_schema_declares_dashboard_block():
+    from utils.config_loader import BASE_DIR
+    with open(os.path.join(BASE_DIR, "schemas", "config.schema.json")) as fh:
+        schema = json.load(fh)
+    dash = schema["properties"]["dashboard"]
+    assert dash["type"] == "object"
+    for key in ("title", "logo", "color", "footer"):
+        assert dash["properties"][key]["type"] == "string"
+
+
+def test_schema_declares_tab_and_row_label():
+    from utils.config_loader import BASE_DIR
+    with open(os.path.join(BASE_DIR, "schemas", "config.schema.json")) as fh:
+        schema = json.load(fh)
+    props = schema["definitions"]["derived_view"]["properties"]
+    assert props["tab"]["type"] == "string"
+    assert props["row_label"]["type"] == "string"

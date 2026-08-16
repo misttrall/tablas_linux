@@ -105,6 +105,17 @@
           "items": { "$ref": "#/definitions/derived_view" }
         }
       ]
+    },
+    "dashboard": {
+      "description": "Branding del dashboard web (white-label por empresa).",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "logo": { "type": "string" },
+        "color": { "type": "string" },
+        "footer": { "type": "string" }
+      },
+      "additionalProperties": true
     }
   },
   "additionalProperties": true,
@@ -113,6 +124,8 @@
       "type": "object",
       "properties": {
         "name": { "type": "string" },
+        "tab": { "type": "string" },
+        "row_label": { "type": "string" },
         "text_lang": { "type": "string" },
         "keys": {
           "type": "array",
