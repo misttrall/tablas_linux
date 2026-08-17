@@ -84,13 +84,6 @@ def _default_private_key() -> bytes:
         return fh.read()
 
 
-def _default_secret() -> str:
-    secret = os.environ.get("NOVUS_LICENSE_SERVER_SECRET")
-    if not secret:
-        raise RuntimeError("Define NOVUS_LICENSE_SERVER_SECRET (pepper del servidor de licencias)")
-    return secret
-
-
 try:  # app de arranque (uvicorn license_server.app:app); los tests usan create_app()
     _engine = _default_engine()
     license_db.init_db(_engine)

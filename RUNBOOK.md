@@ -15,6 +15,7 @@ dashboard web con autenticación (JWT + bcrypt).
 8. [Solución de problemas](#8-solución-de-problemas)
 9. [Configuración](#9-configuración)
 10. [Rutas y seguridad](#10-rutas-y-seguridad)
+11. [Emitir una licencia para un cliente](#11-emitir-una-licencia-para-un-cliente)
 
 ---
 
@@ -250,3 +251,89 @@ Notas de seguridad:
   password (el instalador la obliga en el primer login).
 - `ETL_COOKIE_SECURE` puede activarse cuando el dashboard se sirva por HTTPS
   (detrás de un proxy).
+
+## 11. Emitir una licencia para un cliente
+
+Flujo operativo completo para dar de alta un cliente con licencia en el
+servidor de Novus. Requiere acceso al servidor donde corre el license server.
+
+### 1. Generar el par de claves ed25519 (una sola vez)
+
+```bash
+NOVUS_LICENSE_SERVER_SECRET=<pepper-secreto> \
+  .venv/bin/python -m license_server.cli keygen
+```
+
+Esto crea `license_server/private_key.pem` (privada, chmod 600) y
+`licensing/novus_public.pem` (pública, se copia al cliente).
+
+### 2. Registrar el cliente
+
+```bash
+NOVUS_LICENSE_SERVER_SECRET=<pepper-secreto> \
+  .venv/bin/python -m license_server.cli customer add \
+    --id empresa_001 \
+    --name "Mi Empresa" \
+    --api-key <clave-api-secreta>
+```
+
+### 3. Emitir la licencia
+
+```bash
+NOVUS_LICENSE_SERVER_SECRET=<pepper-secreto> \
+  .venv/bin/python -m license_server.cli license issue \
+    --customer empresa_001 \
+    --license-id NOVUS-001 \
+    --valid-until 2026-09-01 \
+    --modules derived dashboard \
+    --limit users=5
+```
+
+La CLI imprime el token JWT. Guardarlo de forma segura (el cliente lo
+necesita solo si activa manualmente; normalmente se obtiene vía API).
+
+### 4. Arrancar el license server
+
+```bash
+NOVUS_LICENSE_SERVER_SECRET=<pepper-secreto> \
+  ./scripts/run_license_server.sh
+```
+
+Escucha en `127.0.0.1:8080` (configurable con `HOST`/`PORT`).
+
+### 5. Configurar el cliente
+
+En el `config.json` del cliente, agregar el bloque `license`:
+
+```json
+{
+  "license": {
+    "server": "https://licencias.novusit.cl",
+    "customer_id": "empresa_001",
+    "api_key": "<clave-api-secreta>",
+    "public_key": "licensing/novus_public.pem"
+  }
+}
+```
+
+Copiar `licensing/novus_public.pem` al directorio del cliente.
+
+### 6. Verificar en el cliente
+
+```bash
+# Estado de la licencia
+etl license status
+
+# Forzar activación (si no hay caché aún)
+etl license activate
+```
+
+### troubleshooting rápido
+
+| Síntoma | Causa | Acción |
+|---------|-------|--------|
+| `activación rechazada (401)` | API key incorrecta | Verificar `api_key` en config y en el servidor |
+| `sin_licencia_activa` | No se emitió licencia para ese cliente | `license issue --customer ...` en el servidor |
+| `licencia_vencida` | `valid_until` pasó | Renovar: `license renew --license-id ... --valid-until ...` |
+| `modulo_no_contratado` | El módulo no está en `--modules` | Reemitir con los módulos necesarios |
+| `no se pudo contactar el servidor` | Servidor caído o firewall | Verificar conectividad; el caché local mantiene el servicio durante `offline_until` |

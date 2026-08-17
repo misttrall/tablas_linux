@@ -33,6 +33,7 @@ Producto de **Novus IT** ([novusit.cl](https://novusit.cl)) dentro del pilar **D
 | Persistencia | `db/staging_loader.py` (staging), `db/merge_runner.py` (MERGE), `db/sinks/` (por dialecto), `db/control.py` (locks, progreso, telemetría) |
 | Modelo derivado | `derived/materializer.py`, `derived/excel_export.py`, `derived/minimos_import.py` |
 | Dashboard | `dashboard/app.py` (FastAPI), `dashboard/auth/` (JWT + bcrypt), `dashboard/static/` (HTML/JS) |
+| Licenciamiento | `license_server/` (emisión/validación JWT ed25519), `licensing/` (activación, caché, enforcement) |
 | Migraciones | `migrations/{mssql,mysql,postgresql,sqlite}/` |
 | Observabilidad | `utils/live.py` (estado en vivo), `utils/etl_state.py`, `utils/logger.py` |
 
@@ -391,6 +392,74 @@ El botón **Sincronizar** (pestañas `#etl` y `#inventario`) dispara `POST /api/
 > El botón requiere que el host del dashboard tenga el SDK SAP + pyrfc para poder ejecutar `cli run` (entorno on-premise o contenedor con el SDK montado). En la imagen Docker ligera (sin pyrfc) devolvería un error visible y no lanzaría nada.
 
 **Auto-recuperación**: si el subproceso muere o se cuelga (crash, señal, corte de red), `/api/live` y `/api/etl/trigger` lo detectan (el hijo desaparece, o el estado no avanza en más de 120 segundos) y limpian solos: marcan la corrida como `failed`, eliminan el lock local `/tmp/etl_sap.lock` si su dueño ya no existe, y dejan el estado `idle` para poder reintentar. La UI se desatasca sola en pocos segundos.
+
+## Licenciamiento (`licensing/` + `license_server/`)
+
+El sistema de licenciamiento controla qué módulos de Novus están habilitados para cada cliente. Tiene dos partes: el **servidor de licencias** (emite y valida tokens JWT con firma ed25519) y el **engine cliente** (`licensing/`) que consume y cachea la licencia.
+
+### License server (`license_server/`)
+
+API FastAPI que emite tokens JWT firmados con clave ed25519. Se gestiona por CLI:
+
+```bash
+# 1. Generar par de claves (una sola vez)
+NOVUS_LICENSE_SERVER_SECRET=... python -m license_server.cli keygen
+
+# 2. Registrar un cliente
+NOVUS_LICENSE_SERVER_SECRET=... python -m license_server.cli customer add \
+  --id empresa_001 --name "Mi Empresa" --api-key <secreto>
+
+# 3. Emitir una licencia
+NOVUS_LICENSE_SERVER_SECRET=... python -m license_server.cli license issue \
+  --customer empresa_001 --license-id NOVUS-001 \
+  --valid-until 2026-12-31 --modules derived dashboard --limit users=5
+
+# Arrancar el servidor
+NOVUS_LICENSE_SERVER_SECRET=... ./scripts/run_license_server.sh  # puerto 8080
+```
+
+### Engine cliente (`licensing/`)
+
+- **Activación online**: `POST /api/activate` al servidor con `customer_id` + `api_key`; devuelve un JWT con `valid_until`, `offline_until`, módulos y límites.
+- **Caché local**: `~/.novus/license-<customer>.json` — evita llamar al servidor en cada arranque. Se refresca cada `refresh_minutes` (default 720).
+- **Gracia offline**: si el servidor no responde, se usa el caché siempre que `offline_until` no haya expirado. Estados: `ACTIVE` → `GRACE` → `EXPIRED`.
+- **Sin bloque `license` en config**: todo queda habilitado (`NO_LICENSE`), útil para desarrollo.
+
+### Módulos opt-in
+
+| Módulo | Qué gatea | Dónde se verifica |
+|---|---|---|
+| `derived` | Materialización del modelo derivado y Excel | `cli reporte`, `etl run` (materialización) |
+| `dashboard` | Páginas y endpoints del dashboard web | Endpoints `/api/inventory*`, `/api/derived-*`, página `/derivadas` |
+| `bi` | Entregable BI (`etl bi`) | `cli bi manifest/export/guide` |
+
+### Configuración
+
+Bloque `license` en `config.json`:
+
+```json
+{
+  "license": {
+    "server": "https://licencias.novusit.cl",
+    "customer_id": "empresa_001",
+    "api_key": "secreto-del-cliente",
+    "public_key": "licensing/novus_public.pem",
+    "cache_path": "~/.novus/license-empresa_001.json",
+    "refresh_minutes": 720
+  }
+}
+```
+
+Si el bloque `license` no existe, el sistema queda en modo `NO_LICENSE` (todo habilitado, sin validación).
+
+### CLI de licencia en el cliente
+
+```bash
+etl license status       # estado actual, módulos y límites
+etl license activate     # forzar re-activación contra el servidor
+etl license validate     # validar la firma del caché local
+etl license clear-cache  # eliminar caché (obliga re-activación)
+```
 
 ## Migraciones
 
