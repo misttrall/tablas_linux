@@ -55,7 +55,7 @@ def client(tmp_path, monkeypatch):
             "VALUES (1, 'Mara_Data', 63, 63, 15687, 3.2, 'ok')"))
 
     monkeypatch.setenv("ETL_CONFIG", str(cfg_path))
-    monkeypatch.setenv("ETL_SECRET", "test-secret")
+    monkeypatch.setenv("ETL_SECRET", "test-secret-at-least-32-chars-long!")
     return _login_admin(TestClient(dashboard_app.app))
 
 
@@ -100,7 +100,7 @@ def test_index_served(client):
     assert res.headers["location"] == "/panel"
     res2 = client.get("/derivadas")
     assert res2.status_code == 200
-    assert "Invertec BI" in res2.text
+    assert "Novus" in res2.text
 
 
 def test_inventario_redirects_to_derivadas(client):
@@ -120,7 +120,7 @@ def test_all_pages_have_branding_elements(client):
 def test_etl_page_has_sync_controls(client):
     res = client.get("/etl")
     assert res.status_code == 200
-    assert "Sincronizar" in res.text
+    assert "Sincroniz" in res.text
     assert 'id="btnSync"' in res.text
 
 
@@ -181,7 +181,7 @@ def inventory_client(tmp_path, monkeypatch):
         ]).to_sql("inv_bodega", conn, index=False)
 
     monkeypatch.setenv("ETL_CONFIG", str(cfg_path))
-    monkeypatch.setenv("ETL_SECRET", "test-secret")
+    monkeypatch.setenv("ETL_SECRET", "test-secret-at-least-32-chars-long!")
     return _login_admin(TestClient(dashboard_app.app))
 
 

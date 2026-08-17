@@ -60,8 +60,24 @@ case "$ACTION" in
   shell)
     docker exec -it "$NAME" bash
     ;;
+  sync)
+    echo "etl-docker: disparando sincronización ETL..."
+    docker exec -it "$NAME" runuser -u etl -- /opt/etl/tablas_linux/venv/bin/python -m cli run --config /opt/etl/tablas_linux/config.json
+    ;;
+  report)
+    docker exec -it "$NAME" runuser -u etl -- /opt/etl/tablas_linux/venv/bin/python -m cli reporte --config /opt/etl/tablas_linux/config.json
+    ;;
+  bi)
+    docker exec -it "$NAME" runuser -u etl -- /opt/etl/tablas_linux/venv/bin/python -m cli bi export --config /opt/etl/tablas_linux/config.json
+    ;;
+  inspect)
+    docker exec -it "$NAME" runuser -u etl -- /opt/etl/tablas_linux/venv/bin/python -m cli license inspect --config /opt/etl/tablas_linux/config.json
+    ;;
+  users)
+    docker exec -it "$NAME" runuser -u etl -- /opt/etl/tablas_linux/venv/bin/python -m cli users list --config /opt/etl/tablas_linux/config.json
+    ;;
   *)
-    echo "uso: $0 {build|up|down|logs|status|shell}" >&2
+    echo "uso: $0 {build|up|down|logs|status|shell|sync|report|bi|inspect|users}" >&2
     exit 1
     ;;
 esac

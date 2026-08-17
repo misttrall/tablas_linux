@@ -2,7 +2,7 @@
 
 import os
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from licensing.client import LicenseError, get_manager
@@ -10,6 +10,7 @@ from utils.config_loader import load_config
 
 from . import security
 from .dependencies import require_admin, require_user
+from .rate_limit import InMemoryRateLimiter
 from .users import (
     create_user,
     delete_user,
@@ -23,6 +24,9 @@ router = APIRouter()
 
 COOKIE_NAME = "etl_session"
 MIN_PASSWORD_LENGTH = 8
+
+# Limitador de intentos en login: 10 peticiones por minuto por IP
+login_limiter = InMemoryRateLimiter(max_requests=10, window_seconds=60)
 
 
 class LoginRequest(BaseModel):
@@ -64,12 +68,23 @@ def _validate_password(password):
 
 
 @router.post("/api/auth/login")
-def login(body: LoginRequest, response: Response):
+def login(body: LoginRequest, response: Response, request: Request):
+    client_ip = request.client.host if request.client else "unknown"
+    allowed, retry_after = login_limiter.check(client_ip)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="demasiados_intentos",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     user = get_user_with_hash(body.username)
     if user is None or not security.verify_password(body.password, user.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="credenciales_invalidas")
     if not user["active"]:
         raise HTTPException(status_code=403, detail="usuario_inactivo")
+
+    login_limiter.reset(client_ip)
 
     token = security.create_token(user["username"], user["role"], user["is_root"])
     response.set_cookie(
@@ -118,13 +133,29 @@ def change_password(body: PasswordChangeRequest, user=Depends(require_user)):
     return {"ok": True}
 
 
+def _require_admin_licensed(user=Depends(require_admin)):
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    try:
+        lic = get_manager(config).get_license()
+    except LicenseError as exc:
+        raise HTTPException(status_code=403, detail="licencia_no_verificable") from exc
+    import time
+    from licensing.models import LicenseState
+    state = lic.state(time.time())
+    if state in (LicenseState.EXPIRED, LicenseState.SUSPENDED, LicenseState.REVOKED):
+        raise HTTPException(status_code=403, detail=f"licencia:{state.value}")
+    if not lic.has("dashboard"):
+        raise HTTPException(status_code=403, detail="modulo_no_contratado:dashboard")
+    return user
+
+
 @router.get("/api/admin/users")
-def admin_list_users(user=Depends(require_admin)):
+def admin_list_users(user=Depends(_require_admin_licensed)):
     return list_users()
 
 
 @router.post("/api/admin/users")
-def admin_create_user(body: UserCreate, user=Depends(require_admin)):
+def admin_create_user(body: UserCreate, user=Depends(_require_admin_licensed)):
     if not body.username.strip() or len(body.username.strip()) < 3:
         raise HTTPException(status_code=400, detail="username_invalido")
     if body.role not in ("user", "admin"):
@@ -149,7 +180,7 @@ def admin_create_user(body: UserCreate, user=Depends(require_admin)):
 
 
 @router.patch("/api/admin/users/{user_id}")
-def admin_update_user(user_id: int, body: UserUpdate, user=Depends(require_admin)):
+def admin_update_user(user_id: int, body: UserUpdate, user=Depends(_require_admin_licensed)):
     try:
         updated = update_user(user_id, role=body.role, active=body.active)
     except ValueError:
@@ -160,7 +191,7 @@ def admin_update_user(user_id: int, body: UserUpdate, user=Depends(require_admin
 
 
 @router.delete("/api/admin/users/{user_id}")
-def admin_delete_user(user_id: int, user=Depends(require_admin)):
+def admin_delete_user(user_id: int, user=Depends(_require_admin_licensed)):
     try:
         delete_user(user_id)
     except ValueError:
@@ -171,7 +202,7 @@ def admin_delete_user(user_id: int, user=Depends(require_admin)):
 
 
 @router.post("/api/admin/users/{user_id}/password")
-def admin_reset_password(user_id: int, body: PasswordReset, admin=Depends(require_admin)):
+def admin_reset_password(user_id: int, body: PasswordReset, admin=Depends(_require_admin_licensed)):
     from .users import get_user_by_id
 
     target = get_user_by_id(user_id)

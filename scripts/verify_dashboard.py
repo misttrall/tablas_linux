@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verificación E2E del dashboard white-label (Novus / Invertec BI).
+"""Verificación E2E del dashboard (Novus BI Platform).
 
 Requiere Playwright (pip install playwright && playwright install chromium) y un
 servidor corriendo (default http://127.0.0.1:8001):
@@ -52,7 +52,7 @@ async def main():
         # --- Login: título, toggle password, favicon, branding ---
         await page.goto(args.base + "/login", wait_until="networkidle")
         title = await page.title()
-        check("título login", "Invertec" in title, title)
+        check("título login", "Novus" in title, title)
         toggled = page.locator("#pwToggle")
         check("toggle password visible", await toggled.is_visible())
         pw = page.locator("#password")

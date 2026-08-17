@@ -58,6 +58,7 @@ class LicenseManager:
         self._cache_path = cache_path(config)
         self._public_key = self._load_public_key(lic)
         self._cached = None
+        self._cached_mtime = 0
 
     def _load_public_key(self, lic):
         path = lic.get("public_key")
@@ -72,6 +73,12 @@ class LicenseManager:
                 return fh.read()
         except FileNotFoundError:
             return None
+
+    def _disk_cache_mtime(self) -> float:
+        try:
+            return os.path.getmtime(self._cache_path)
+        except OSError:
+            return 0.0
 
     def _from_claims(self, claims) -> License:
         return License(
@@ -97,14 +104,21 @@ class LicenseManager:
     def get_license(self) -> License:
         if not self.enabled:
             return License.no_license()
-        cached = self._cached or load_cache(self._cache_path)
+
+        # Detección en tiempo real: si el archivo de caché cambió en disco, recargarlo
+        disk_mtime = self._disk_cache_mtime()
+        if self._cached is None or getattr(self, "_cached_mtime", 0.0) != disk_mtime:
+            self._cached = load_cache(self._cache_path)
+            self._cached_mtime = disk_mtime
+
+        cached = self._cached
         if cached and self._is_fresh_enough(cached):
             try:
                 claims = verify_token(cached["token"], self._public_key)
             except LicenseInvalid:
                 cached = None
+                self._cached = None
             else:
-                self._cached = cached
                 return self._from_claims(claims)
         return self._refresh(cached)
 
@@ -123,6 +137,7 @@ class LicenseManager:
         data = {"claims": claims, "token": token, "fetched_at": int(time.time())}
         save_cache(self._cache_path, data)
         self._cached = data
+        self._cached_mtime = self._disk_cache_mtime()
         return self._from_claims(claims)
 
     def _cached_license(self, cached, cause: LicenseError) -> License:
@@ -132,6 +147,7 @@ class LicenseManager:
             raise LicenseBlocked(
                 "no se pudo validar la licencia y el caché local es inválido") from cause
         self._cached = cached
+        self._cached_mtime = self._disk_cache_mtime()
         return self._from_claims(claims)
 
     def _activate(self) -> str:
@@ -164,12 +180,17 @@ class LicenseManager:
         data = {"claims": claims, "token": token, "fetched_at": int(time.time())}
         save_cache(self._cache_path, data)
         self._cached = data
+        self._cached_mtime = self._disk_cache_mtime()
         return self._from_claims(claims)
 
     def validate(self) -> License:
         if not self.enabled:
             return License.no_license()
-        cached = self._cached or load_cache(self._cache_path)
+        disk_mtime = self._disk_cache_mtime()
+        if self._cached is None or getattr(self, "_cached_mtime", 0.0) != disk_mtime:
+            self._cached = load_cache(self._cache_path)
+            self._cached_mtime = disk_mtime
+        cached = self._cached
         if not cached:
             raise LicenseUnreachable("no hay caché de licencia local")
         claims = verify_token(cached["token"], self._public_key)
@@ -177,6 +198,7 @@ class LicenseManager:
 
     def clear_cache(self):
         self._cached = None
+        self._cached_mtime = 0.0
         if os.path.exists(self._cache_path):
             os.remove(self._cache_path)
 

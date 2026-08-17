@@ -30,12 +30,14 @@ async function changePassword(current, next) {
 
 function friendlyError(detail) {
   if (!detail) return 'Operación fallida.';
-  if (typeof detail === 'string' && detail.startsWith('password_muy_corto')) {
-    return 'La password es muy corta (mínimo 8).';
+  if (typeof detail === 'string' && (detail.startsWith('password_muy_corto') || detail.includes('password_muy_corto'))) {
+    return 'La contraseña es muy corta (mínimo 8 caracteres).';
   }
-  if (detail === 'password_igual_actual') return 'La password nueva debe ser distinta a la actual.';
-  if (detail === 'password_actual_incorrecta') return 'Password actual incorrecta.';
-  if (detail === 'root_protegido') return 'El usuario root está protegido.';
+  if (detail === 'password_igual_actual') return 'La nueva contraseña debe ser distinta a la actual.';
+  if (detail === 'password_actual_incorrecta') return 'La contraseña actual es incorrecta.';
+  if (detail === 'usuario_ya_existe') return 'El nombre de usuario ya existe en el sistema.';
+  if (detail === 'usuario_no_encontrado') return 'Usuario no encontrado.';
+  if (detail === 'root_protegido') return 'El usuario administrador principal está protegido.';
   return detail;
 }
 
@@ -93,10 +95,8 @@ function renderBranding() {
     if (img) {
       if (b.logo) {
         img.src = b.logo;
-        img.style.display = 'inline-block';
-      } else {
-        img.style.display = 'none';
       }
+      img.style.display = 'inline-block';
     }
     const f = document.getElementById('appFooter');
     if (f && b.footer) f.textContent = b.footer;
@@ -109,18 +109,38 @@ function renderPasswordModal() {
   div.className = 'modal-backdrop';
   div.style.display = 'none';
   div.innerHTML =
-    '<div class="modal">' +
-    '<h3>Cambiar password</h3>' +
+    '<div class="modal" style="max-width:480px">' +
+    '<div style="display:flex; justify-content:space-between; align-items:flex-start;">' +
+    '<div>' +
+    '<div class="eyebrow" style="margin-bottom:4px;">Seguridad de la Cuenta</div>' +
+    '<h3>Actualizar Contraseña</h3>' +
+    '<div class="sub" style="margin-bottom:16px;">Define una nueva clave de acceso de al menos 8 caracteres.</div>' +
+    '</div>' +
+    '<button id="pwCloseBtn" style="background:transparent; border:none; font-size:20px; color:var(--gray-500); cursor:pointer;">✕</button>' +
+    '</div>' +
     '<div class="err" id="pwError"></div>' +
-    '<label>Password actual</label><input type="password" id="pwCurrent">' +
-    '<label>Password nueva</label><input type="password" id="pwNew">' +
-    '<label>Repetir password nueva</label><input type="password" id="pwNew2">' +
+    '<div class="form-group">' +
+    '<label>Contraseña Actual</label>' +
+    '<input type="password" id="pwCurrent" placeholder="••••••••••••" autocomplete="current-password">' +
+    '</div>' +
+    '<div class="form-group">' +
+    '<label>Nueva Contraseña</label>' +
+    '<input type="password" id="pwNew" placeholder="Mínimo 8 caracteres" autocomplete="new-password">' +
+    '</div>' +
+    '<div class="form-group">' +
+    '<label>Confirmar Nueva Contraseña</label>' +
+    '<input type="password" id="pwNew2" placeholder="Repite la nueva contraseña" autocomplete="new-password">' +
+    '</div>' +
     '<div class="modal-actions">' +
-    '<button class="btn" id="pwCancel" style="display:none">Cancelar</button>' +
-    '<button class="btn" id="pwOk">Cambiar</button>' +
+    '<button class="btn btn-secondary" id="pwCancel">Cancelar</button>' +
+    '<button class="btn btn-primary" id="pwOk">Actualizar Contraseña</button>' +
     '</div></div>';
   document.body.appendChild(div);
   document.getElementById('pwCancel').onclick = function () {
+    div.style.display = 'none';
+    document.getElementById('pwError').textContent = '';
+  };
+  document.getElementById('pwCloseBtn').onclick = function () {
     div.style.display = 'none';
     document.getElementById('pwError').textContent = '';
   };
@@ -137,11 +157,13 @@ function showPasswordModal(forced, onDone) {
   cur.value = ''; n1.value = ''; n2.value = '';
   err.textContent = '';
   document.getElementById('pwCancel').style.display = forced ? 'none' : 'inline-block';
+  document.getElementById('pwCloseBtn').style.display = forced ? 'none' : 'inline-block';
   const ok = document.getElementById('pwOk');
   ok.onclick = async function () {
     err.textContent = '';
-    if (!cur.value) { err.textContent = 'Ingresa tu password actual.'; return; }
-    if (n1.value !== n2.value) { err.textContent = 'Las passwords nuevas no coinciden.'; return; }
+    if (!cur.value) { err.textContent = 'Ingresa tu contraseña actual.'; return; }
+    if (n1.value.length < 8) { err.textContent = 'La nueva contraseña debe tener al menos 8 caracteres.'; return; }
+    if (n1.value !== n2.value) { err.textContent = 'Las contraseñas nuevas no coinciden.'; return; }
     try {
       await changePassword(cur.value, n1.value);
     } catch (e) {
@@ -171,49 +193,65 @@ async function bootPage(allowedRoles) {
   return u;
 }
 
+async function triggerBrowserDownload(url, filename) {
+  toast('Iniciando descarga de ' + (filename || 'archivo') + '…', 'info');
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Error al descargar archivo' }));
+      toast(err.detail || 'Error en la descarga', 'err');
+      return false;
+    }
+    const blob = await res.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = downloadUrl;
+    a.download = filename || 'descarga';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      window.URL.revokeObjectURL(downloadUrl);
+      a.remove();
+    }, 1000);
+    toast('Descarga completada: ' + filename, 'ok');
+    return true;
+  } catch (e) {
+    toast('Error de red al descargar archivo', 'err');
+    return false;
+  }
+}
+
 function navLink(href, label) {
-  const cls = location.pathname === href ? ' class="active"' : '';
+  const cls = location.pathname === href ? ' class="nav-item active"' : ' class="nav-item"';
   return '<a href="' + href + '"' + cls + '>' + label + '</a>';
 }
 
 function renderUserbar(user) {
   const bar = document.querySelector('#userbar');
   if (!bar) return;
-  const role = user.role === 'admin' ? 'admin' : 'usuario';
+  const initial = (user.username || 'U').charAt(0).toUpperCase();
   const links = [];
   if (user.role === 'admin') {
     links.push(navLink('/etl', 'ETL'));
-    links.push(navLink('/panel', 'Panel'));
+    links.push(navLink('/panel', 'Usuarios'));
   }
-  links.push(navLink('/derivadas', 'Vistas'));
-  bar.innerHTML = links.join('') +
-    '<span class="user-menu">' +
-    '<button class="user-menu-btn" onclick="toggleUserMenu(event)">' +
-    escapeHtml(user.username) + ' (' + role + ') ▾</button>' +
-    '<div class="dropdown" id="userMenu" style="display:none">' +
-    '<button class="dropdown-item" onclick="userMenuPassword()">Cambiar contraseña</button>' +
-    '<button class="dropdown-item" onclick="logout()">Salir</button>' +
-    '</div></span>';
-}
+  links.push(navLink('/derivadas', 'Vistas & BI'));
 
-function toggleUserMenu(event) {
-  event.stopPropagation();
-  const dd = document.getElementById('userMenu');
-  if (!dd) return;
-  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
-}
-
-function closeUserMenu() {
-  const dd = document.getElementById('userMenu');
-  if (dd) dd.style.display = 'none';
+  bar.innerHTML =
+    '<div class="nav-links">' +
+    links.join('') +
+    '</div>' +
+    '<div class="user-profile-badge">' +
+    '<span class="user-avatar-circle">' + escapeHtml(initial) + '</span>' +
+    '<span>' + escapeHtml(user.username) + '</span>' +
+    '</div>' +
+    '<button class="btn btn-secondary" style="padding:6px 16px; font-size:12.5px;" onclick="logout()">Salir</button>';
 }
 
 function userMenuPassword() {
-  closeUserMenu();
-  showPasswordModal(false, function () { toast('Contraseña actualizada', 'ok'); });
+  showPasswordModal(false, function () { toast('Contraseña actualizada con éxito', 'ok'); });
 }
-
-document.addEventListener('click', closeUserMenu);
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', renderBranding);
@@ -221,17 +259,228 @@ if (document.readyState === 'loading') {
   renderBranding();
 }
 
-async function maybeLicenseBanner() {
+function renderSapModal() {
+  if (document.getElementById('sapModal')) return;
+  const div = document.createElement('div');
+  div.id = 'sapModal';
+  div.className = 'modal-backdrop';
+  div.style.display = 'none';
+  div.innerHTML =
+    '<div class="modal" style="max-width:560px">' +
+    '<div style="display:flex; justify-content:space-between; align-items:flex-start;">' +
+    '<div>' +
+    '<div class="eyebrow" style="margin-bottom:4px;">Integración ERP</div>' +
+    '<h3>Configuración SAP RFC</h3>' +
+    '<div class="sub" style="margin-bottom:18px;">Parámetros de enlace nativo con SAP NetWeaver RFC</div>' +
+    '</div>' +
+    '<button onclick="closeSapModal()" style="background:transparent; border:none; font-size:20px; color:var(--gray-500); cursor:pointer;">✕</button>' +
+    '</div>' +
+    '<div class="form-grid">' +
+    '<div class="full"><label>Servidor / Host SAP (IP o FQDN) *</label><input type="text" id="sapHost" placeholder="sap-prod.empresa.cl o 192.168.1.100"></div>' +
+    '<div><label>Nº de Sistema (sysnr)</label><input type="text" id="sapSysnr" placeholder="00"></div>' +
+    '<div><label>Mandante / Client</label><input type="text" id="sapClient" placeholder="100 (o 300)"></div>' +
+    '<div><label>Usuario RFC *</label><input type="text" id="sapUser" placeholder="RFC_ETL_USER"></div>' +
+    '<div><label>Idioma</label><input type="text" id="sapLang" placeholder="ES"></div>' +
+    '<div class="full"><label>Contraseña RFC *</label><input type="password" id="sapPass" placeholder="Contraseña de usuario RFC"></div>' +
+    '</div>' +
+    '<div id="sapStatusBox" class="conn-status-box"></div>' +
+    '<div class="actions" style="margin-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">' +
+    '<button class="btn btn-outline" id="btnTestSap" onclick="testSapConnection()">Probar Conexión RFC</button>' +
+    '<div style="display:flex; gap:8px;">' +
+    '<button class="btn btn-secondary" onclick="closeSapModal()">Cancelar</button>' +
+    '<button class="btn btn-primary" id="btnSaveSap" onclick="saveSapConnection()">Guardar Configuración</button>' +
+    '</div>' +
+    '</div>' +
+    '</div>';
+  document.body.appendChild(div);
+
+  ['sapHost', 'sapSysnr', 'sapClient', 'sapUser', 'sapPass', 'sapLang'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', function() {
+        el.classList.remove('is-invalid');
+        const box = document.getElementById('sapStatusBox');
+        if (box && box.classList.contains('err')) {
+          box.style.display = 'none';
+        }
+      });
+    }
+  });
+}
+
+function showSapModal() {
+  renderSapModal();
+  const box = document.getElementById('sapStatusBox');
+  if (box) { box.className = 'conn-status-box'; box.textContent = ''; box.style.display = 'none'; }
+  ['sapHost', 'sapSysnr', 'sapClient', 'sapUser', 'sapPass', 'sapLang'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('is-invalid');
+  });
+  fetch('/api/onboarding/status')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data) {
+        document.getElementById('sapHost').value = data.ashost || '';
+        document.getElementById('sapSysnr').value = data.sysnr || '';
+        document.getElementById('sapClient').value = data.client || '';
+        document.getElementById('sapUser').value = data.user || '';
+        document.getElementById('sapLang').value = data.lang || 'ES';
+        if (data.has_password) {
+          document.getElementById('sapPass').placeholder = '(Contraseña guardada - dejar vacío para conservar)';
+        }
+      }
+    });
+  document.getElementById('sapModal').style.display = 'flex';
+}
+
+function closeSapModal() {
+  const m = document.getElementById('sapModal');
+  if (m) m.style.display = 'none';
+}
+
+async function testSapConnection() {
+  const btn = document.getElementById('btnTestSap');
+  const box = document.getElementById('sapStatusBox');
+  const hostEl = document.getElementById('sapHost');
+  const sysnrEl = document.getElementById('sapSysnr');
+  const clientEl = document.getElementById('sapClient');
+  const userEl = document.getElementById('sapUser');
+  const passEl = document.getElementById('sapPass');
+  const langEl = document.getElementById('sapLang');
+
+  [hostEl, sysnrEl, clientEl, userEl, passEl, langEl].forEach(el => el.classList.remove('is-invalid'));
+
+  const host = hostEl.value.trim();
+  const sysnr = sysnrEl.value.trim();
+  const client = clientEl.value.trim();
+  const user = userEl.value.trim();
+  const pass = passEl.value;
+  const lang = langEl.value.trim();
+
+  let hasErrors = false;
+  if (!host) { hostEl.classList.add('is-invalid'); hasErrors = true; }
+  if (!user) { userEl.classList.add('is-invalid'); hasErrors = true; }
+  if (!pass) { passEl.classList.add('is-invalid'); hasErrors = true; }
+
+  if (hasErrors) {
+    box.className = 'conn-status-box err';
+    box.textContent = 'Por favor completa todos los campos requeridos marcados con (*) (Servidor Host, Usuario RFC y Contraseña) para probar la conexión.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Probando Conexión RFC…';
+  box.className = 'conn-status-box';
+  box.style.display = 'none';
+
   try {
-    const res = await fetch('/api/license');
+    const res = await fetch('/api/onboarding/test-sap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ashost: host, sysnr: sysnr || '00', client: client || '100', user: user, passwd: pass, lang: lang || 'ES' }),
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      box.className = 'conn-status-box ok';
+      box.textContent = 'Se estableció la conexión exitosamente con el servidor SAP NetWeaver (Mandante: ' + (client || '100') + ', Nº Sistema: ' + (sysnr || '00') + '). Conectividad operativa.';
+      toast('Conexión con SAP exitosa', 'ok');
+    } else {
+      box.className = 'conn-status-box err';
+      const msg = data.message || data.error || data.detail || 'No se pudo establecer conexión con el servidor SAP ERP. Verifica la dirección del Host y las credenciales RFC ingresadas.';
+      box.textContent = msg;
+      toast('No se pudo conectar con SAP', 'err');
+    }
+  } catch (err) {
+    box.className = 'conn-status-box err';
+    box.textContent = 'No se pudo establecer conexión: Error de red o tiempo de espera agotado al comunicar con el servidor SAP.';
+    toast('Error de red en la conexión con SAP', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Probar Conexión RFC';
+  }
+}
+
+async function saveSapConnection() {
+  const btn = document.getElementById('btnSaveSap');
+  const box = document.getElementById('sapStatusBox');
+  const hostEl = document.getElementById('sapHost');
+  const sysnrEl = document.getElementById('sapSysnr');
+  const clientEl = document.getElementById('sapClient');
+  const userEl = document.getElementById('sapUser');
+  const passEl = document.getElementById('sapPass');
+  const langEl = document.getElementById('sapLang');
+
+  [hostEl, sysnrEl, clientEl, userEl, passEl, langEl].forEach(el => el.classList.remove('is-invalid'));
+
+  const host = hostEl.value.trim();
+  const sysnr = sysnrEl.value.trim();
+  const client = clientEl.value.trim();
+  const user = userEl.value.trim();
+  const pass = passEl.value;
+  const lang = langEl.value.trim();
+
+  let hasErrors = false;
+  if (!host) { hostEl.classList.add('is-invalid'); hasErrors = true; }
+  if (!user) { userEl.classList.add('is-invalid'); hasErrors = true; }
+
+  if (hasErrors) {
+    box.className = 'conn-status-box err';
+    box.textContent = 'Por favor completa el Servidor Host y Usuario RFC para guardar la configuración.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Guardando…';
+
+  try {
+    const res = await fetch('/api/onboarding/save-sap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ashost: host, sysnr: sysnr || '00', client: client || '100', user: user, passwd: pass, lang: lang || 'ES' }),
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      box.className = 'conn-status-box ok';
+      box.textContent = 'Configuración RFC guardada exitosamente en el sistema.';
+      toast('Configuración SAP guardada con éxito', 'ok');
+      setTimeout(function() {
+        closeSapModal();
+        const banner = document.getElementById('onboardingBanner');
+        if (banner) banner.style.display = 'none';
+      }, 1200);
+    } else {
+      box.className = 'conn-status-box err';
+      box.textContent = data.detail || data.message || 'Error al guardar la configuración de SAP.';
+    }
+  } catch (err) {
+    box.className = 'conn-status-box err';
+    box.textContent = 'Error de comunicación con el backend al guardar la configuración.';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Guardar Configuración';
+  }
+}
+
+async function maybeCheckOnboardingBanner(user) {
+  if (!user || user.role !== 'admin') return;
+  try {
+    const res = await fetch('/api/onboarding/status');
     if (!res.ok) return;
     const data = await res.json();
-    const blocked = ['GRACE', 'EXPIRED', 'SUSPENDED', 'REVOKED'];
-    if (!blocked.includes(data.state) || !data.message) return;
-    const banner = document.createElement('div');
-    banner.className = 'license-banner';
-    banner.textContent = data.message;
-    document.body.prepend(banner);
-  } catch (e) { /* sin licencia local: no molestar */ }
+    const existing = document.getElementById('onboardingBanner');
+    if (data.source_type === 'sap' && !data.configured) {
+      renderSapModal();
+      const main = document.querySelector('main');
+      if (main && !existing) {
+        const b = document.createElement('div');
+        b.id = 'onboardingBanner';
+        b.className = 'err';
+        b.style.display = 'block';
+        b.innerHTML = '<strong>Configuración SAP pendiente:</strong> Ingresa los parámetros RFC en la barra de herramientas para habilitar las sincronizaciones automáticas.';
+        main.prepend(b);
+      }
+    } else if (existing) {
+      existing.remove();
+    }
+  } catch (e) { /* silenciar */ }
 }
-document.addEventListener('DOMContentLoaded', maybeLicenseBanner);

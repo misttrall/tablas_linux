@@ -16,6 +16,7 @@ dashboard web con autenticación (JWT + bcrypt).
 9. [Configuración](#9-configuración)
 10. [Rutas y seguridad](#10-rutas-y-seguridad)
 11. [Emitir una licencia para un cliente](#11-emitir-una-licencia-para-un-cliente)
+12. [Entorno de pruebas y simulación de licenciamiento](#12-entorno-de-pruebas-y-simulación-de-licenciamiento)
 
 ---
 
@@ -30,6 +31,8 @@ corriendo.
 > licenciado por SAP). La instalación base funciona con fuentes CSV/Excel;
 > para SAP hay que montar el SDK NW RFC y el wheel de SAP y usar `--with-sap`
 > (ver [Configuración](#9-configuración)).
+>
+> 🐳 **Despliegue en Docker / VM de Cliente**: Para desplegar la plataforma completa dockerizada, consulta la [Guía de Despliegue en Docker](docs/DESPLIEGUE_DOCKER.md).
 
 ```bash
 sudo apt install -y python3 python3-venv openssl rsync
@@ -337,3 +340,42 @@ etl license activate
 | `licencia_vencida` | `valid_until` pasó | Renovar: `license renew --license-id ... --valid-until ...` |
 | `modulo_no_contratado` | El módulo no está en `--modules` | Reemitir con los módulos necesarios |
 | `no se pudo contactar el servidor` | Servidor caído o firewall | Verificar conectividad; el caché local mantiene el servicio durante `offline_until` |
+
+---
+
+## 12. Entorno de pruebas y simulación de licenciamiento
+
+Para desarrollo, QA o soporte, existe un sandbox completamente aislado y un simulador matricial que no interfiere con puertos productivos ni bases de datos reales.
+
+### 1. Levantar el sandbox aislado (puertos 8082 y 8083)
+
+```bash
+# Arrancar servidor de licencias (:8082) y dashboard sandbox (:8083)
+./scripts/run_license_sandbox.sh start
+
+# Ver estado actual
+./scripts/run_license_sandbox.sh status
+
+# Simular escenarios en caliente
+./scripts/run_license_sandbox.sh scenario E05  # Período de gracia
+./scripts/run_license_sandbox.sh scenario E07  # Suspensión
+./scripts/run_license_sandbox.sh scenario E01  # Licencia completa activa
+
+# Detener
+./scripts/run_license_sandbox.sh stop
+```
+
+Acceso web: `http://localhost:8083` (`admin` / `admin`).
+
+### 2. Ejecutar la matriz de simulación (12 escenarios)
+
+```bash
+# Validación completa por CLI
+.venv/bin/python scripts/simulate_licensing.py run-all
+
+# Inspección exhaustiva de la licencia actual
+python -m cli license inspect --config config.json
+```
+
+Para más detalles sobre los 12 escenarios, generación de tokens y pruebas E2E, consulta [docs/SIMULACION_LICENCIAMIENTO.md](docs/SIMULACION_LICENCIAMIENTO.md).
+

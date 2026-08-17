@@ -1,0 +1,75 @@
+{
+  "environment": "qa",
+  "source": {
+    "type": "csv",
+    "config": {
+      "directory": "/tmp/opencode/csv-test"
+    }
+  },
+  "database": {
+    "dialect": "sqlite",
+    "database": "/tmp/opencode/csv-test/db.sqlite"
+  },
+  "tables": [
+    { "source": "MARA", "target": "Mara_Data", "keys": ["MATNR"] },
+    { "source": "MARD", "target": "Mard_Data", "keys": ["MANDT", "MATNR", "WERKS", "LGORT"] },
+    { "source": "MBEW", "target": "Mbew_Data", "keys": ["MATNR", "BWKEY"] },
+    { "source": "MAKT", "target": "Makt_Data", "keys": ["MANDT", "MATNR", "SPRAS"] },
+    { "source": "T001L", "target": "T001L_Data", "keys": ["WERKS", "LGORT"] }
+  ],
+  "fields": {
+    "MARA": ["MATNR", "MTART", "MATKL", "XCHPF", "MEINS"],
+    "MARD": ["MANDT", "MATNR", "WERKS", "LGORT", "LABST", "LMINB"],
+    "MBEW": ["MATNR", "BWKEY", "LBKUM", "SALK3", "VPRSV", "STPRS", "VERPR"],
+    "MAKT": ["MANDT", "MATNR", "SPRAS", "MAKTX", "MAKTG"],
+    "T001L": ["WERKS", "LGORT", "LGOBE"]
+  },
+  "derived": {
+    "name": "inv_bodega",
+    "text_lang": "ES",
+    "tab": "Inventario",
+    "row_label": "MATNR",
+    "dominio": {
+      "registry_table": "material_centro_almacen",
+      "registry_columns": {
+        "material": "material",
+        "centro": "centro",
+        "almacen": "almacen"
+      },
+      "filters": [
+        { "field": "WERKS", "op": "eq", "value": "P100" },
+        { "field": "LGORT", "op": "eq", "value": "A001" }
+      ]
+    },
+    "precio": { "field": "VERPR" },
+    "valor": { "field": "VERPR" },
+    "keys": ["MATNR", "WERKS", "LGORT"],
+    "inventory": {
+      "filters": {
+        "centro": "Centro",
+        "almacen": "Almacen"
+      }
+    },
+    "columns": [
+      { "as": "MATNR", "source": "MATNR", "label": "Material" },
+      { "as": "Descripcion", "source": "MAKTX", "label": "Descripción" },
+      { "as": "Centro", "source": "WERKS", "label": "Centro" },
+      { "as": "Almacen", "source": "LGORT", "label": "Almacén", "hide": true },
+      { "as": "AlmacenDesc", "source": "LGOBE", "label": "Almacén", "fallback": "Almacen" },
+      { "as": "StockLibre", "source": "LABST", "label": "Stock", "fallback": "Stock" },
+      { "as": "UMB", "source": "MEINS", "label": "UMB", "hide": true },
+      { "as": "Precio", "source": "VERPR", "label": "Precio", "hide": true },
+      { "as": "ValorTotal", "compute": "LABST * VERPR", "label": "Valor" }
+    ],
+    "excel": {
+      "path": "/tmp/opencode/csv-test/output/inventario.xlsx",
+      "sheet": "Stock",
+      "alerts_sheet": "StockBajo"
+    }
+  },
+  "dashboard": {
+    "title": "Demo CSV · Novus BI",
+    "color": "#EA7222",
+    "footer": "Novus IT · Datos e Inteligencia de Negocios"
+  }
+}

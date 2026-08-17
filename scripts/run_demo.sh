@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Arranque del demo del dashboard white-label (Novus / Invertec BI).
+# Arranque del demo del dashboard (Novus BI Platform).
 #
 #   scripts/run_demo.sh start|stop|status|log [--port 8001]
 #
@@ -11,7 +11,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PORT="${PORT:-8001}"
 HOST="${HOST:-0.0.0.0}"
-SECRET="${ETL_SECRET:-demo-secret-para-desarrollo}"
+SECRET="${ETL_SECRET:-demo-secret-para-desarrollo-32-chars-long!}"
 PID_FILE="${PID_FILE:-/tmp/uvicorn8001.pid}"
 LOG_FILE="${LOG_FILE:-/tmp/uvicorn8001.log}"
 
@@ -54,10 +54,10 @@ start() {
     echo "[error] Puerto $PORT está en uso (instancia ajena); no se toca" >&2
     exit 1
   fi
-  ETL_SECRET="$SECRET" nohup "$venv_py" -m uvicorn dashboard.app:app \
+  ETL_CONFIG="$ROOT/config.json" ETL_SECRET="$SECRET" setsid "$venv_py" -m uvicorn dashboard.app:app \
     --host "$HOST" --port "$PORT" > "$LOG_FILE" 2>&1 &
   echo $! > "$PID_FILE"
-  sleep 2
+  sleep 1
   if running; then
     echo "[ok] Demo en http://$HOST:$PORT (pid $(cat "$PID_FILE"), log $LOG_FILE)"
   else
@@ -68,13 +68,25 @@ start() {
 
 stop() {
   if running; then
-    kill "$(cat "$PID_FILE")"
+    local pid
+    pid="$(cat "$PID_FILE")"
+    kill "$pid" 2>/dev/null || true
+    for _ in {1..20}; do
+      if ! kill -0 "$pid" 2>/dev/null; then break; fi
+      sleep 0.1
+    done
     rm -f "$PID_FILE"
     echo "[ok] Detenido"
   else
     rm -f "$PID_FILE"
     echo "[ok] No estaba corriendo"
   fi
+}
+
+restart() {
+  stop
+  sleep 0.5
+  start
 }
 
 status() {
@@ -86,13 +98,16 @@ status() {
 }
 
 log() {
-  tail -50 "$LOG_FILE" 2>/dev/null || echo "[info] Sin log en $LOG_FILE"
+  tail -f "$LOG_FILE"
 }
 
-case "${1:-status}" in
-  start) start ;;
-  stop) stop ;;
-  status) status ;;
-  log) log ;;
-  *) echo "Uso: $0 {start|stop|status|log}" >&2; exit 1 ;;
+cmd="${1:-status}"
+shift || true
+case "$cmd" in
+  start)   start "$@" ;;
+  stop)    stop ;;
+  restart) restart "$@" ;;
+  status)  status ;;
+  log)     log ;;
+  *)       echo "Uso: $0 start|stop|restart|status|log" >&2; exit 2 ;;
 esac

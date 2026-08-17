@@ -1,13 +1,13 @@
-"""API HTTP del license server (FastAPI)."""
-
 import os
 import traceback
 from datetime import datetime, timezone
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import create_engine
+
+from dashboard.auth.rate_limit import InMemoryRateLimiter
 
 from . import db as license_db
 from .signing import sign_claims
@@ -22,15 +22,61 @@ def _error(status_code: int, detail: str) -> JSONResponse:
     return JSONResponse(status_code=status_code, content={"error": detail, "code": status_code})
 
 
+def _docs_enabled() -> bool:
+    env = os.environ.get("ENVIRONMENT", "dev").lower()
+    return env == "dev" or os.environ.get("ETL_DOCS_ENABLED", "").lower() in ("1", "true", "yes")
+
+
 def create_app(engine, private_key_pem: bytes, secret: str = "") -> FastAPI:
-    app = FastAPI(title="Novus License Server")
+    docs_url = "/docs" if _docs_enabled() else None
+    redoc_url = "/redoc" if _docs_enabled() else None
+    openapi_url = "/openapi.json" if _docs_enabled() else None
+
+    app = FastAPI(
+        title="Novus License Server",
+        docs_url=docs_url,
+        redoc_url=redoc_url,
+        openapi_url=openapi_url,
+    )
+
+    # Limitador de activación: 30 peticiones por minuto por IP
+    activate_limiter = InMemoryRateLimiter(max_requests=30, window_seconds=60)
+
+    @app.middleware("http")
+    async def add_security_headers(request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+    @app.get("/")
+    def root():
+        endpoints = ["/api/health", "/api/activate"]
+        if _docs_enabled():
+            endpoints.append("/docs")
+        return {
+            "service": "Novus License Server",
+            "status": "online",
+            "endpoints": endpoints,
+            "dashboard_url": "http://127.0.0.1:8083",
+        }
 
     @app.get("/api/health")
     def health():
         return {"status": "ok"}
 
     @app.post("/api/activate")
-    def activate(body: ActivateRequest):
+    def activate(body: ActivateRequest, request: Request):
+        client_ip = request.client.host if request.client else "unknown"
+        allowed, retry_after = activate_limiter.check(client_ip)
+        if not allowed:
+            return JSONResponse(
+                status_code=429,
+                content={"error": "demasiados_intentos", "code": 429},
+                headers={"Retry-After": str(retry_after)},
+            )
+
         customer = license_db.get_customer(engine, body.customer_id)
         if customer is None or not license_db.verify_api_key(
                 secret, body.api_key, customer.api_key_hash):

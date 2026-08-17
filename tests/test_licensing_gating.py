@@ -260,12 +260,11 @@ def dash_client_factory(tmp_path, monkeypatch):
     }
     cfg_path.write_text(json.dumps(cfg))
     assert cli.cmd_migrate(str(cfg_path)) == 0
-    auth_engine.set_engine_provider(
-        lambda: create_engine(f"sqlite:///{db_path}"))
+    monkeypatch.setenv("ETL_CONFIG", str(cfg_path))
+    monkeypatch.setenv("ETL_SECRET", "test-secret-at-least-32-chars-long!")
+    monkeypatch.setattr(auth_engine, "_ENGINE_PROVIDER", dash_app.get_engine)
     auth_users.create_user("admin", "testpass123", role="admin", is_root=True,
                            must_change_password=False)
-    monkeypatch.setenv("ETL_CONFIG", str(cfg_path))
-    monkeypatch.setenv("ETL_SECRET", "test-secret")
     client = TestClient(dash_app.app)
     client.post("/api/auth/login", json={"username": "admin", "password": "testpass123"})
     return client

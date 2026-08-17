@@ -342,7 +342,59 @@ def cmd_license(config_path, action):
         mgr.clear_cache()
         print("[ok] caché de licencia eliminada")
         return 0
-    print("Uso: etl license {status|activate|validate|clear-cache}")
+    if action == "inspect":
+        import time as _time
+        from licensing.cache import cache_path as _cache_path, load_cache as _load_cache
+        c_path = _cache_path(config)
+        cached = _load_cache(c_path)
+        try:
+            lic = mgr.get_license()
+        except LicenseError as exc:
+            print(f"[error] {exc}")
+            return 1
+        now = _time.time()
+        st = lic.state(now)
+        print("=== Inspección Detallada de Licencia ===")
+        print(f"Estado actual:       {st.value}")
+        print(f"Cliente ID:          {lic.customer_id or '(sin cliente / libre)'}")
+        print(f"Licencia ID:         {lic.license_id or '(sin licencia / libre)'}")
+        print(f"Servidor configurado:{mgr.server or '(local / sin servidor)'}")
+        print(f"Ruta archivo caché:  {c_path}")
+        if cached:
+            fetched_ago = int(now - cached.get("fetched_at", now))
+            print(f"Caché en disco:      PRESENTE (obtenido hace {fetched_ago} s / {fetched_ago//60} min)")
+        else:
+            print("Caché en disco:      NO ENCONTRADO / NO GENERADO")
+        if lic.valid_until:
+            diff_days = round((lic.valid_until - now) / 86400, 1)
+            print(f"Válida hasta:        {_fmt_epoch(lic.valid_until)} ({diff_days} días restantes)")
+        if lic.offline_until:
+            grace_days = round((lic.offline_until - now) / 86400, 1)
+            print(f"Límite de gracia:    {_fmt_epoch(lic.offline_until)} ({grace_days} días)")
+        if lic.modules is None:
+            print("Módulos:             TODOS (modo no administrado / libre)")
+        else:
+            on = [m for m, ok in lic.modules.items() if ok]
+            off = [m for m, ok in lic.modules.items() if not ok]
+            print(f"Módulos habilitados: {', '.join(sorted(on)) or '(ninguno)'}")
+            if off:
+                print(f"Módulos bloqueados:  {', '.join(sorted(off))}")
+        u_lim = mgr.users_limit()
+        if u_lim is not None:
+            try:
+                from dashboard.auth import users as auth_users
+                from dashboard.auth import engine as auth_engine
+                prev = auth_engine.get_engine_provider()
+                auth_engine.set_engine_provider(lambda: _engine_from_config(config, fast_executemany=False))
+                u_cnt = len(auth_users.list_users())
+                auth_engine.set_engine_provider(prev)
+                print(f"Límite de usuarios:  {u_cnt} / {u_lim} en uso")
+            except Exception:
+                print(f"Límite de usuarios:  {u_lim}")
+        else:
+            print("Límite de usuarios:  Ilimitado")
+        return 0
+    print("Uso: etl license {status|inspect|activate|validate|clear-cache}")
     return 1
 
 
@@ -511,7 +563,7 @@ def main(argv=None):
     license_parser = subparsers.add_parser(
         "license", help="Estado y gestión de la licencia de la empresa")
     license_sub = license_parser.add_subparsers(dest="license_action", required=True)
-    for action_name in ("status", "activate", "validate", "clear-cache"):
+    for action_name in ("status", "inspect", "activate", "validate", "clear-cache"):
         action_parser = license_sub.add_parser(action_name,
                                                help=f"{action_name} de la licencia")
         _add_config_arg(action_parser)

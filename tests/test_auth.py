@@ -22,7 +22,7 @@ def auth_env(tmp_path, monkeypatch):
     cfg_path.write_text(json.dumps(cfg))
     assert cli.cmd_migrate(str(cfg_path)) == 0
     monkeypatch.setenv("ETL_CONFIG", str(cfg_path))
-    monkeypatch.setenv("ETL_SECRET", "test-secret-for-auth-tests")
+    monkeypatch.setenv("ETL_SECRET", "test-secret-for-auth-tests-32-chars-long!")
     return str(cfg_path)
 
 
@@ -257,7 +257,7 @@ def test_root_is_protected(client):
 def test_login_page_served(client):
     res = client.get("/login")
     assert res.status_code == 200
-    assert "Invertec BI" in res.text
+    assert "Novus IT" in res.text
 
 
 def test_static_assets_served(client):

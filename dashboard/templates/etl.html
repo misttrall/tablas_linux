@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ETL · Invertec BI</title>
+  <title>ETL · Novus IT</title>
   <link rel="icon" type="image/png" href="/static/novus-mark.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,50 +12,57 @@
 </head>
 <body>
   <header>
-    <img id="appLogo" alt="" style="display:none">
-    <h1 id="appTitle">Invertec BI</h1>
+    <div class="brand-wrapper">
+      <img id="appLogo" src="/static/novus-mark.png" alt="Novus IT" style="height:32px; width:32px; object-fit:contain; display:inline-block; vertical-align:middle; margin-right:8px;">
+      <h1 id="appTitle">Novus IT · Data Platform</h1>
+    </div>
     <div class="userbar" id="userbar"></div>
   </header>
   <main>
     <div class="toolbar">
-      <button class="btn sync" id="btnSync" onclick="syncNow()">Sincronizar</button>
-      <span id="syncStatus" class="hint">-</span>
+      <button class="btn btn-primary" id="btnSync" onclick="syncNow()">Ejecutar Sincronización</button>
+      <button class="btn btn-secondary" onclick="showSapModal()">Configuración SAP RFC</button>
+      <span id="syncStatus" class="hint" style="font-weight:600; font-size:13px; color:var(--gray-500);">-</span>
     </div>
     <div class="cards">
       <div class="card"><div class="label">Estado última corrida</div><div class="value" id="lastStatus">-</div></div>
       <div class="card"><div class="label">Tablas ok</div><div class="value" id="tablesOk">-</div></div>
       <div class="card"><div class="label">Filas cargadas</div><div class="value" id="totalRows">-</div></div>
     </div>
-    <h2>Últimas corridas</h2>
+    <div class="eyebrow" style="margin-top:32px;">Historial</div>
+    <h2 style="margin-bottom:14px;">Últimas Corridas</h2>
     <div class="table-wrap">
       <table id="executions">
         <thead><tr><th>#</th><th>Estado</th><th>Inicio</th><th>Fin</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
-    <h2>Progreso por tabla</h2>
+    <div class="eyebrow" style="margin-top:32px;">Estado por Entidad</div>
+    <h2 style="margin-bottom:14px;">Progreso de Tablas ERP</h2>
     <div class="table-wrap">
       <table id="progress">
         <thead><tr><th>Tabla</th><th>Estado</th><th>Filas</th><th>Delta</th><th>Actualizado</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
-    <h2>Extracción en vivo</h2>
+    <div class="eyebrow" style="margin-top:32px;">Monitor en Tiempo Real</div>
+    <h2 style="margin-bottom:14px;">Extracción en Vivo</h2>
     <div class="cards">
       <div class="card"><div class="label">Fase</div><div class="value" id="livePhase">idle</div></div>
       <div class="card"><div class="label">Tabla</div><div class="value" id="liveTable">-</div></div>
       <div class="card"><div class="label">Filas leídas</div><div class="value" id="liveRows">0</div></div>
     </div>
-    <div id="liveBarWrap" style="display:none; background:#fff; border-radius:8px; padding:12px; box-shadow:0 1px 3px rgba(0,0,0,.1);">
-      <div style="font-size:13px; color:#64748b; margin-bottom:6px;" id="liveChunkLabel">chunk 0/0</div>
-      <div style="background:#eef2f6; border-radius:999px; height:10px; overflow:hidden;">
-        <div id="liveBar" style="background:#2563eb; height:100%; width:0%; transition:width .4s;"></div>
+    <div id="liveBarWrap" style="display:none; background:var(--white); border-radius:var(--radius); padding:16px; border:1px solid var(--gray-100); box-shadow:var(--shadow-sm); margin-bottom:24px;">
+      <div style="font-size:13px; font-weight:700; color:var(--navy); margin-bottom:8px;" id="liveChunkLabel">chunk 0/0</div>
+      <div style="background:var(--gray-100); border-radius:999px; height:10px; overflow:hidden;">
+        <div id="liveBar" style="background:var(--orange); height:100%; width:0%; transition:width .4s;"></div>
       </div>
     </div>
-    <h2>Detalle por corrida</h2>
-    <select id="runSelect" onchange="loadRunDetail()"></select>
+    <div class="eyebrow" style="margin-top:32px;">Auditoría</div>
+    <h2 style="margin-bottom:14px;">Detalle por Corrida</h2>
+    <select id="runSelect" onchange="loadRunDetail()" style="background:var(--gray-50); border:1px solid var(--gray-300); border-radius:var(--radius-sm); padding:10px 14px; font-family:inherit; font-size:13.5px; color:var(--gray-700); margin-bottom:12px;"></select>
     <div class="table-wrap">
-      <table id="runDetail" style="margin-top:8px;">
+      <table id="runDetail" style="margin-top:0;">
         <thead><tr><th>Tabla</th><th>Estado</th><th>Chunks</th><th>Filas</th><th>Duración (s)</th></tr></thead>
         <tbody></tbody>
       </table>
@@ -68,6 +75,7 @@
       const user = await bootPage(['admin']);
       if (!user) return;
       renderUserbar(user);
+      maybeCheckOnboardingBanner(user);
       refresh();
       refreshLive();
       loadLastSync();

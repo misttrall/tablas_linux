@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vistas Analíticas & BI · Novus IT</title>
+  <link rel="icon" type="image/png" href="/static/novus-mark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/common.css">
+</head>
+<body>
+  <header>
+    <div class="brand-wrapper">
+      <img id="appLogo" src="/static/novus-mark.png" alt="Novus IT" style="height:32px; width:32px; object-fit:contain; display:inline-block; vertical-align:middle; margin-right:8px;">
+      <h1 id="appTitle">Novus IT · Data Platform</h1>
+    </div>
+    <div class="userbar" id="userbar"></div>
+  </header>
+  
+  <nav id="tabs" class="tabs"></nav>
+
+  <main>
+    <div id="kpis" class="cards"></div>
+    
+    <div class="toolbar" id="filtersBar" style="display:none">
+      <select id="fCentro"><option value="">Centro: todos</option></select>
+      <select id="fAlmacen"><option value="">Almacén: todos</option></select>
+      <select id="fArea"><option value="">Área: todas</option></select>
+      <input type="text" id="fSearch" placeholder="Buscar material o código…" autocomplete="off">
+      <label class="check"><input type="checkbox" id="fLowOnly"> Solo bajo stock</label>
+      
+      <div class="actions-group">
+        <button class="btn btn-secondary" onclick="downloadViewExcel()">Descargar Excel</button>
+        <button class="btn btn-secondary" onclick="downloadViewCsv()">Exportar CSV</button>
+        <button class="btn btn-primary" onclick="showBiModal()">Entregables Power BI</button>
+      </div>
+    </div>
+
+    <div id="viewBody">
+      <div id="viewMessage">Cargando datos de la plataforma…</div>
+    </div>
+  </main>
+
+  <footer id="appFooter">© 2026 Novus IT · Datos, Infraestructura, Ciberseguridad y Consultoría TI</footer>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/derivadas.js"></script>
+</body>
+</html>

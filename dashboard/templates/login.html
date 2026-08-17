@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acceso Corporativo · Novus BI</title>
+  <link rel="icon" type="image/png" href="/static/novus-mark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/common.css">
+  <style>
+    body.login-body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at 50% 15%, rgba(234, 114, 34, 0.15), transparent 50%),
+                  linear-gradient(145deg, var(--navy-dark) 0%, var(--navy) 100%);
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 440px;
+      animation: fadeIn 0.3s ease-out;
+    }
+    .login-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border-top: 4px solid var(--orange);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      padding: 42px 38px;
+      box-sizing: border-box;
+    }
+    .login-logo-wrap {
+      text-align: center;
+      margin-bottom: 26px;
+    }
+    .login-logo-img {
+      height: 46px;
+      max-width: 190px;
+      object-fit: contain;
+      margin-bottom: 12px;
+    }
+    .login-heading {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -0.01em;
+      margin-top: 4px;
+    }
+    .login-subtitle {
+      font-size: 13px;
+      color: var(--gray-500);
+      margin-top: 4px;
+      line-height: 1.45;
+    }
+    .login-footer-info {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body class="login-body">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-logo-wrap">
+        <img id="appLogo" src="/static/novus-logo.png" alt="Novus IT" class="login-logo-img" onerror="this.src='/static/novus-mark.png'">
+        <div class="eyebrow" style="margin-bottom:2px;">Data Platform · BI</div>
+        <h2 class="login-heading" id="appTitle">Iniciar Sesión</h2>
+        <div class="login-subtitle">Ingresa tus credenciales corporativas para acceder.</div>
+      </div>
+
+      <div class="err" id="loginError"></div>
+
+      <div class="form-group">
+        <label for="username">Usuario</label>
+        <input type="text" id="username" autocomplete="username" autofocus placeholder="admin">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <div class="password-wrap">
+          <input type="password" id="password" autocomplete="current-password" placeholder="••••••••••••">
+          <button type="button" class="password-toggle" id="pwToggle" aria-label="Mostrar u ocultar contraseña">Ver</button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="loginBtn" style="width:100%; margin-top:12px; padding:13px; font-size:14px; font-weight:800;">
+        Acceder al Sistema
+      </button>
+    </div>
+
+    <div class="login-footer-info">
+      <span>🔒 Acceso seguro y cifrado · Novus IT Solutions</span>
+    </div>
+  </div>
+
+  <script src="/static/common.js"></script>
+  <script>
+    function setBusy(busy) {
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = busy;
+      btn.innerHTML = busy ? '<span class="spin"></span> Accediendo…' : 'Acceder al Sistema';
+    }
+
+    function showLoginError(msg) {
+      const err = document.getElementById('loginError');
+      err.textContent = msg;
+      err.style.display = 'block';
+    }
+
+    async function doLogin() {
+      const err = document.getElementById('loginError');
+      err.textContent = '';
+      err.style.display = 'none';
+
+      const userVal = document.getElementById('username').value.trim();
+      const passVal = document.getElementById('password').value;
+
+      if (!userVal || !passVal) {
+        showLoginError('Por favor ingresa tu usuario y contraseña.');
+        return;
+      }
+
+      setBusy(true);
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: userVal,
+            password: passVal,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showLoginError(friendlyError(data.detail) || 'Usuario o contraseña incorrectos.');
+          return;
+        }
+        location.href = data.role === 'admin' ? '/panel' : '/derivadas';
+      } catch (e) {
+        showLoginError('No se pudo conectar con el servidor. Intenta nuevamente.');
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    const pw = document.getElementById('password');
+    document.getElementById('pwToggle').addEventListener('click', function () {
+      const showing = pw.type === 'text';
+      pw.type = showing ? 'password' : 'text';
+      this.textContent = showing ? 'Ver' : 'Ocultar';
+      pw.focus();
+    });
+
+    document.getElementById('loginBtn').addEventListener('click', doLogin);
+    document.getElementById('password').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+    document.getElementById('username').addEventListener('keydown', function (e) { if (e.key === 'Enter') document.getElementById('password').focus(); });
+
+    ['username', 'password'].forEach(function(id) {
+      document.getElementById(id).addEventListener('input', function() {
+        const err = document.getElementById('loginError');
+        if (err) { err.textContent = ''; err.style.display = 'none'; }
+      });
+    });
+  </script>
+</body>
+</html>

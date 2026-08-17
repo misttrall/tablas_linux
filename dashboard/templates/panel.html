@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel · Novus IT</title>
+  <link rel="icon" type="image/png" href="/static/novus-mark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/common.css">
+</head>
+<body>
+  <header>
+    <div class="brand-wrapper">
+      <img id="appLogo" src="/static/novus-mark.png" alt="Novus IT" style="height:32px; width:32px; object-fit:contain; display:inline-block; vertical-align:middle; margin-right:8px;">
+      <h1 id="appTitle">Novus IT · Data Platform</h1>
+    </div>
+    <div class="userbar" id="userbar"></div>
+  </header>
+  <main>
+    <div class="eyebrow">Administración</div>
+    <h2 style="margin-bottom:20px;">Gestión de Usuarios</h2>
+    <div class="err" id="userError"></div>
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="showCreateUserModal()">Crear Usuario</button>
+      <button class="btn btn-secondary" onclick="showSapModal()">Configuración SAP RFC</button>
+    </div>
+    <div class="table-wrap">
+      <table id="users">
+        <thead><tr><th>#</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+  <footer id="appFooter"></footer>
+  <script src="/static/common.js"></script>
+  <script>
+    let currentUser = null;
+
+    async function init() {
+      currentUser = await bootPage(['admin']);
+      if (!currentUser) return;
+      renderUserbar(currentUser);
+      maybeCheckOnboardingBanner(currentUser);
+      loadUsers();
+    }
+
+    function renderCreateUserModal() {
+      const div = document.createElement('div');
+      div.id = 'createModal';
+      div.className = 'modal-backdrop';
+      div.style.display = 'none';
+      div.innerHTML =
+        '<div class="modal" style="max-width:500px">' +
+        '<div style="display:flex; justify-content:space-between; align-items:flex-start;">' +
+        '<div>' +
+        '<div class="eyebrow" style="margin-bottom:4px;">Administración</div>' +
+        '<h3>Crear Nuevo Usuario</h3>' +
+        '<div class="sub" style="margin-bottom:16px;">Define las credenciales y rol para el nuevo acceso al sistema.</div>' +
+        '</div>' +
+        '<button id="createCloseBtn" style="background:transparent; border:none; font-size:20px; color:var(--gray-500); cursor:pointer;">✕</button>' +
+        '</div>' +
+        '<div class="err" id="userModalError"></div>' +
+        '<div class="form-group">' +
+        '<label>Nombre de Usuario</label>' +
+        '<input type="text" id="newUsername" placeholder="ej. analista_datos" autocomplete="off">' +
+        '</div>' +
+        '<div class="form-group">' +
+        '<label>Contraseña Inicial</label>' +
+        '<input type="password" id="newPassword" placeholder="Mínimo 8 caracteres">' +
+        '</div>' +
+        '<div class="form-group">' +
+        '<label>Rol y Permisos</label>' +
+        '<select id="newRole"><option value="user">Usuario Analista (Solo Lectura y Vistas)</option><option value="admin">Administrador (Control Total y ETL)</option></select>' +
+        '</div>' +
+        '<div style="margin:14px 0;">' +
+        '<label class="check"><input type="checkbox" id="newForce" checked> Exigir cambio de contraseña en primer acceso</label>' +
+        '</div>' +
+        '<div class="modal-actions">' +
+        '<button class="btn btn-secondary" id="createCancel">Cancelar</button>' +
+        '<button class="btn btn-primary" id="createOk">Crear Usuario</button>' +
+        '</div></div>';
+      document.body.appendChild(div);
+      document.getElementById('createCancel').onclick = function () { div.style.display = 'none'; };
+      document.getElementById('createCloseBtn').onclick = function () { div.style.display = 'none'; };
+      document.getElementById('createOk').onclick = createUser;
+      document.getElementById('newUsername').addEventListener('input', function () {
+        document.getElementById('userModalError').textContent = '';
+      });
+      document.getElementById('newPassword').addEventListener('input', function () {
+        document.getElementById('userModalError').textContent = '';
+      });
+      return div;
+    }
+
+    function showCreateUserModal() {
+      const m = document.getElementById('createModal') || renderCreateUserModal();
+      m.style.display = 'flex';
+      document.getElementById('newUsername').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('newForce').checked = true;
+      document.getElementById('userModalError').textContent = '';
+      document.getElementById('newUsername').focus();
+    }
+
+    async function loadUsers() {
+      const res = await api('/api/admin/users');
+      const users = await res.json();
+      const tb = document.querySelector('#users tbody');
+      tb.innerHTML = users.map(u => {
+        const isSelf = u.id === currentUser.id;
+        const actions = [];
+        const esc = escapeHtml(u.username);
+        const statusBadge = u.active
+          ? '<span class="tag tag-ok">Activo</span>'
+          : '<span class="tag tag-danger">Inactivo</span>';
+        const roleBadge = u.role === 'admin'
+          ? '<span class="tag" style="background:#E0F2FE; color:#0369A1; border:1px solid #BAE6FD;">Admin</span>'
+          : '<span class="tag" style="background:var(--gray-50); color:var(--navy); border:1px solid var(--gray-300);">Usuario</span>';
+
+        if (u.is_root) {
+          actions.push('<button class="btn btn-outline btn-sm" onclick="showResetModal(' + u.id + ')">Cambiar clave</button>');
+        } else {
+          actions.push('<button class="btn btn-secondary btn-sm" onclick="toggleRole(' + u.id + ',\'' + esc + '\')">' +
+            (u.role === 'admin' ? 'Hacer usuario' : 'Hacer admin') + '</button>');
+          actions.push('<button class="btn btn-secondary btn-sm" onclick="toggleActive(' + u.id + ',\'' + esc + '\')">' +
+            (u.active ? 'Desactivar' : 'Activar') + '</button>');
+          actions.push('<button class="btn btn-outline btn-sm" onclick="showResetModal(' + u.id + ')">Cambiar clave</button>');
+          if (!isSelf) {
+            actions.push('<button class="btn btn-danger btn-sm" onclick="deleteUser(' + u.id + ',\'' + esc + '\')">Eliminar</button>');
+          }
+        }
+        return '<tr><td>' + u.id + '</td><td><strong>' + escapeHtml(u.username) + '</strong></td><td>' + roleBadge +
+          '</td><td>' + statusBadge + '</td><td><div style="display:flex; gap:6px; flex-wrap:wrap;">' + actions.join('') + '</div></td></tr>';
+      }).join('');
+    }
+
+    async function doAction(url, method, body, errEl) {
+      errEl = errEl || document.getElementById('userError');
+      errEl.textContent = '';
+      const res = await api(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { errEl.textContent = friendlyError(data.detail); return false; }
+      return true;
+    }
+
+    async function toggleRole(id, username) {
+      const u = (await (await api('/api/admin/users')).json()).find(x => x.id === id);
+      if (!u) return;
+      const ok = await doAction('/api/admin/users/' + id, 'PATCH', { role: u.role === 'admin' ? 'user' : 'admin' });
+      if (ok) { toast('Rol de ' + username + ' actualizado', 'ok'); loadUsers(); }
+    }
+
+    async function toggleActive(id, username) {
+      const u = (await (await api('/api/admin/users')).json()).find(x => x.id === id);
+      if (!u) return;
+      const ok = await doAction('/api/admin/users/' + id, 'PATCH', { active: !u.active });
+      if (ok) { toast((u.active ? 'Desactivado' : 'Activado') + ' ' + username, 'ok'); loadUsers(); }
+    }
+
+    function renderResetModal() {
+      const div = document.createElement('div');
+      div.id = 'resetModal';
+      div.className = 'modal-backdrop';
+      div.style.display = 'none';
+      div.innerHTML =
+        '<div class="modal" style="max-width:480px">' +
+        '<div style="display:flex; justify-content:space-between; align-items:flex-start;">' +
+        '<div>' +
+        '<div class="eyebrow" style="margin-bottom:4px;">Seguridad</div>' +
+        '<h3 id="resetTitle">Restablecer Contraseña</h3>' +
+        '<div class="sub" style="margin-bottom:16px;">Asigna una nueva clave de acceso al usuario (mínimo 8 caracteres).</div>' +
+        '</div>' +
+        '<button id="resetCloseBtn" style="background:transparent; border:none; font-size:20px; color:var(--gray-500); cursor:pointer;">✕</button>' +
+        '</div>' +
+        '<div class="err" id="resetModalError"></div>' +
+        '<div class="form-group">' +
+        '<label>Nueva Contraseña (mínimo 8 caracteres)</label>' +
+        '<input type="password" id="resetPassword" placeholder="••••••••••••">' +
+        '</div>' +
+        '<div class="modal-actions">' +
+        '<button class="btn btn-secondary" id="resetCancel">Cancelar</button>' +
+        '<button class="btn btn-primary" id="resetOk">Guardar Contraseña</button>' +
+        '</div></div>';
+      document.body.appendChild(div);
+      document.getElementById('resetCancel').onclick = function () { div.style.display = 'none'; };
+      document.getElementById('resetCloseBtn').onclick = function () { div.style.display = 'none'; };
+      document.getElementById('resetOk').onclick = resetPassword;
+      document.getElementById('resetPassword').addEventListener('input', function () {
+        document.getElementById('resetModalError').textContent = '';
+      });
+      return div;
+    }
+
+    function showResetModal(id) {
+      const m = document.getElementById('resetModal') || renderResetModal();
+      m.style.display = 'flex';
+      resetTargetId = id;
+      document.getElementById('resetPassword').value = '';
+      document.getElementById('resetModalError').textContent = '';
+      document.getElementById('resetPassword').focus();
+    }
+
+    let resetTargetId = null;
+
+    async function resetPassword() {
+      const err = document.getElementById('resetModalError');
+      err.textContent = '';
+      const p = document.getElementById('resetPassword').value;
+      if (!p || p.length < 8) {
+        err.textContent = 'La contraseña debe tener al menos 8 caracteres.';
+        return;
+      }
+      const ok = await doAction('/api/admin/users/' + resetTargetId + '/password', 'POST', { new_password: p }, err);
+      if (ok) {
+        document.getElementById('resetModal').style.display = 'none';
+        toast('Contraseña actualizada con éxito', 'ok');
+        loadUsers();
+      }
+    }
+
+    async function deleteUser(id, username) {
+      if (!confirm('¿Eliminar al usuario ' + username + '?')) return;
+      const ok = await doAction('/api/admin/users/' + id, 'DELETE');
+      if (ok) { toast('Usuario ' + username + ' eliminado', 'ok'); loadUsers(); }
+    }
+
+    async function createUser() {
+      const err = document.getElementById('userModalError');
+      err.textContent = '';
+      const username = document.getElementById('newUsername').value.trim();
+      const password = document.getElementById('newPassword').value;
+      const role = document.getElementById('newRole').value;
+      const force = document.getElementById('newForce').checked;
+      if (!username || !password) {
+        err.textContent = 'Por favor completa el nombre de usuario y la contraseña.';
+        return;
+      }
+      if (password.length < 8) {
+        err.textContent = 'La contraseña debe tener al menos 8 caracteres.';
+        return;
+      }
+      const ok = await doAction('/api/admin/users', 'POST', {
+        username: username, password: password, role: role, must_change_password: force,
+      }, err);
+      if (ok) {
+        document.getElementById('createModal').style.display = 'none';
+        toast('Usuario ' + username + ' creado exitosamente', 'ok');
+        loadUsers();
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -39,6 +39,9 @@ etl = "cli:main"
 packages = ["db", "db.sinks", "sources", "sources.sap", "sources.generic", "utils", "dashboard", "dashboard.auth", "derived", "bi", "licensing", "license_server"]
 py-modules = ["cli", "etl_runner"]
 
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
 [tool.ruff]
 line-length = 120
 

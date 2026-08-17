@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estado de Licencia · Novus Data Platform</title>
+  <link rel="icon" type="image/png" href="/static/novus-mark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/common.css">
+  <style>
+    body {
+      background: radial-gradient(circle at 50% 20%, var(--navy-850) 0%, var(--navy-950) 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .lock-card {
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      padding: 40px 36px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      text-align: center;
+    }
+    .lock-icon-badge {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px;
+      background: var(--danger-light);
+      color: var(--danger);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      border: 2px solid rgba(239, 68, 68, 0.2);
+    }
+    .lock-card h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--navy-950);
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .lock-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .info-box {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 13px;
+      color: var(--text-main);
+      margin-bottom: 24px;
+    }
+    .info-box div {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .info-box div:last-child { margin-bottom: 0; }
+    .info-box span.lbl { color: var(--text-muted); font-weight: 600; }
+    .info-box span.val { font-weight: 700; font-family: var(--font-mono); }
+  </style>
+</head>
+<body>
+  <div class="lock-card">
+    <div class="lock-icon-badge">🔒</div>
+    <h1>Acceso Restringido por Licencia</h1>
+    <p>El servicio para esta instancia se encuentra suspendido, vencido o el módulo analítico no forma parte del plan contratado. Los datos almacenados permanecen seguros y resguardados.</p>
+    
+    <div class="info-box">
+      <div><span class="lbl">Plataforma:</span><span class="val">Novus Data Platform</span></div>
+      <div><span class="lbl">Estado:</span><span class="val" style="color:var(--danger)">SUSPENDIDO / VENCIDO</span></div>
+      <div><span class="lbl">Canal de Soporte:</span><span class="val">soporte@novustec.com</span></div>
+    </div>
+
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn btn-secondary" onclick="logout()">Cerrar Sesión</button>
+      <button class="btn btn-primary" onclick="location.reload()">Reintentar Validación</button>
+    </div>
+  </div>
+  <script src="/static/common.js"></script>
+</body>
+</html>

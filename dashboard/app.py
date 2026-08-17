@@ -10,8 +10,8 @@ import sys
 import time
 
 import pandas as pd
-from fastapi import Depends, FastAPI, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sqlalchemy import create_engine, text
@@ -22,14 +22,16 @@ from dashboard.auth.dependencies import current_user_or_none
 from db.db_connection import _connection_string
 from derived.views import derived_views, view_tab_label
 from licensing.client import LicenseError, get_manager
+import functools
 from licensing.models import LicenseState
 from utils.config_loader import load_config
 from utils.live import _live_file, read_live, update_live
 
 
-def require_license_module(module: str):
+@functools.lru_cache(maxsize=None)
+def require_license_module(module: str, admin_only: bool = False):
     """FastAPI dependency factory: returns user if module is entitled, raises 403 otherwise."""
-    def dependency(user=Depends(require_user)):
+    def dependency(user=Depends(require_admin if admin_only else require_user)):
         config = load_config(os.environ.get("ETL_CONFIG"))
         try:
             lic = get_manager(config).get_license()
@@ -44,7 +46,36 @@ def require_license_module(module: str):
     return dependency
 
 
-app = FastAPI(title="ETL Dashboard")
+def _docs_enabled() -> bool:
+    env = os.environ.get("ENVIRONMENT", "dev").lower()
+    return env == "dev" or os.environ.get("ETL_DOCS_ENABLED", "").lower() in ("1", "true", "yes")
+
+
+docs_url = "/docs" if _docs_enabled() else None
+redoc_url = "/redoc" if _docs_enabled() else None
+openapi_url = "/openapi.json" if _docs_enabled() else None
+
+app = FastAPI(title="ETL Dashboard", docs_url=docs_url, redoc_url=redoc_url, openapi_url=openapi_url)
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data:; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none';"
+    )
+    return response
+
 
 app.include_router(auth_pkg.router)
 
@@ -214,7 +245,7 @@ def _last_execution():
 
 
 @app.get("/api/executions")
-def api_executions(last: int = 10, user=Depends(require_admin)):
+def api_executions(last: int = 10, user=Depends(require_license_module("dashboard", admin_only=True))):
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(
@@ -228,12 +259,13 @@ def api_executions(last: int = 10, user=Depends(require_admin)):
 
 
 @app.get("/api/progress")
-def api_progress(user=Depends(require_admin)):
+def api_progress(user=Depends(require_license_module("dashboard", admin_only=True))):
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(
             text("SELECT table_name, status, rows_loaded, last_delta_value, updated_at "
                  "FROM etl_progress ORDER BY table_name"),
+            {"n": 0},
         ).fetchall()
     return [ProgressItem(table_name=r.table_name, status=str(r.status or ""),
                          rows_loaded=r.rows_loaded or 0,
@@ -242,7 +274,7 @@ def api_progress(user=Depends(require_admin)):
 
 
 @app.get("/api/dashboard")
-def api_dashboard(user=Depends(require_admin)):
+def api_dashboard(user=Depends(require_license_module("dashboard", admin_only=True))):
     engine = get_engine()
     with engine.connect() as conn:
         runs = conn.execute(
@@ -286,18 +318,18 @@ def api_branding():
 
 
 @app.get("/api/live")
-def api_live(user=Depends(require_user)):
+def api_live(user=Depends(require_license_module("dashboard"))):
     _recover_stale()
     return read_live()
 
 
 @app.get("/api/last-sync")
-def api_last_sync(user=Depends(require_user)):
+def api_last_sync(user=Depends(require_license_module("dashboard"))):
     return _last_execution()
 
 
 @app.get("/api/tables")
-def api_tables(run_id: int, user=Depends(require_admin)):
+def api_tables(run_id: int, user=Depends(require_license_module("dashboard", admin_only=True))):
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(
@@ -543,8 +575,193 @@ def api_derived_alerts(name: str, limit: int = 500, q: str = "", user=Depends(re
     return {"alerts": data.get("rows", [])}
 
 
+@app.get("/api/derived/{name}/export/excel")
+def api_derived_export_excel(name: str, user=Depends(require_license_module("dashboard"))):
+    df, view = _inventory_frame_for(name)
+    if view is None:
+        raise HTTPException(status_code=404, detail="vista_inexistente")
+    if df is None:
+        raise HTTPException(status_code=404, detail="tabla_no_materializada")
+    from derived.excel_export import export_inventory_excel
+    path = export_inventory_excel(df, view)
+    filename = f"{name}.xlsx"
+    return FileResponse(
+        path,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename=filename,
+    )
+
+
+@app.get("/api/derived/{name}/export/csv")
+def api_derived_export_csv(name: str, user=Depends(require_license_module("dashboard"))):
+    df, view = _inventory_frame_for(name)
+    if view is None:
+        raise HTTPException(status_code=404, detail="vista_inexistente")
+    if df is None:
+        raise HTTPException(status_code=404, detail="tabla_no_materializada")
+
+    csv_bytes = df.to_csv(index=False).encode("utf-8")
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{name}.csv"'},
+    )
+
+
+@app.get("/api/bi/manifest")
+def api_bi_manifest(user=Depends(require_license_module("bi"))):
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    engine = get_engine()
+    from bi.manifest import build_manifest
+    return build_manifest(config, engine)
+
+
+@app.get("/api/bi/guide")
+def api_bi_guide(user=Depends(require_license_module("bi"))):
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    from bi.guide import render_guide
+    guide_md = render_guide(config)
+    return {"guide_markdown": guide_md}
+
+
+@app.post("/api/bi/export")
+def api_bi_export(user=Depends(require_license_module("bi"))):
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    engine = get_engine()
+    from bi.export import export_views
+    from bi.manifest import build_manifest, manifest_to_json
+    from bi.guide import render_guide
+
+    out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output", "bi")
+    os.makedirs(out_dir, exist_ok=True)
+
+    try:
+        results = export_views(config, engine, out_dir=out_dir)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    manifest = build_manifest(config, engine)
+    manifest_path = os.path.join(out_dir, "manifest.json")
+    with open(manifest_path, "w", encoding="utf-8") as fh:
+        fh.write(manifest_to_json(manifest))
+
+    guide_path = os.path.join(out_dir, "GUIA_CONEXION_POWER_BI.md")
+    with open(guide_path, "w", encoding="utf-8") as fh:
+        fh.write(render_guide(config))
+
+    return {
+        "ok": True,
+        "out_dir": out_dir,
+        "files": results,
+        "manifest": manifest,
+    }
+
+
+@app.get("/api/bi/download/{view_name}/parquet")
+def api_bi_download_parquet(view_name: str, user=Depends(require_license_module("bi"))):
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    engine = get_engine()
+    from derived.db import read_table, table_exists
+    if not table_exists(engine, view_name):
+        raise HTTPException(status_code=404, detail="vista_no_materializada")
+    try:
+        import pyarrow  # noqa: F401
+    except ImportError:
+        raise HTTPException(status_code=501, detail="pyarrow_no_disponible")
+    df = read_table(engine, view_name)
+    import io
+    buf = io.BytesIO()
+    df.to_parquet(buf, index=False)
+    buf.seek(0)
+    return Response(
+        content=buf.getvalue(),
+        media_type="application/vnd.apache.parquet",
+        headers={"Content-Disposition": f'attachment; filename="{view_name}.parquet"'},
+    )
+
+
+@app.get("/api/bi/download/{view_name}/csv")
+def api_bi_download_csv(view_name: str, user=Depends(require_license_module("bi"))):
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    engine = get_engine()
+    from derived.db import read_table, table_exists
+    if not table_exists(engine, view_name):
+        raise HTTPException(status_code=404, detail="vista_no_materializada")
+    df = read_table(engine, view_name)
+    csv_bytes = df.to_csv(index=False).encode("utf-8")
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{view_name}.csv"'},
+    )
+
+
+@app.get("/api/bi/download/manifest")
+def api_bi_download_manifest(user=Depends(require_license_module("bi"))):
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    engine = get_engine()
+    from bi.manifest import build_manifest, manifest_to_json
+    manifest = build_manifest(config, engine)
+    return Response(
+        content=manifest_to_json(manifest).encode("utf-8"),
+        media_type="application/json",
+        headers={"Content-Disposition": 'attachment; filename="manifest.json"'},
+    )
+
+
+@app.get("/api/bi/download/guide")
+def api_bi_download_guide(user=Depends(require_license_module("bi"))):
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    from bi.guide import render_guide
+    guide_md = render_guide(config)
+    return Response(
+        content=guide_md.encode("utf-8"),
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="GUIA_CONEXION_POWER_BI.md"'},
+    )
+
+
+@app.get("/api/bi/download-zip")
+def api_bi_download_zip(user=Depends(require_license_module("bi"))):
+    import io
+    import zipfile
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    engine = get_engine()
+    from bi.export import export_views
+    from bi.manifest import build_manifest, manifest_to_json
+    from bi.guide import render_guide
+
+    out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output", "bi")
+    os.makedirs(out_dir, exist_ok=True)
+
+    try:
+        results = export_views(config, engine, out_dir=out_dir)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    manifest = build_manifest(config, engine)
+    guide_text = render_guide(config)
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for res in results:
+            if res.get("csv_path") and os.path.exists(res["csv_path"]):
+                zip_file.write(res["csv_path"], arcname=os.path.basename(res["csv_path"]))
+            if res.get("parquet_path") and os.path.exists(res["parquet_path"]):
+                zip_file.write(res["parquet_path"], arcname=os.path.basename(res["parquet_path"]))
+        zip_file.writestr("manifest.json", manifest_to_json(manifest))
+        zip_file.writestr("GUIA_CONEXION_POWER_BI.md", guide_text)
+
+    zip_buffer.seek(0)
+    return Response(
+        content=zip_buffer.getvalue(),
+        media_type="application/zip",
+        headers={"Content-Disposition": 'attachment; filename="novus_power_bi_dataset.zip"'},
+    )
+
+
 @app.post("/api/etl/trigger")
-def api_etl_trigger(user=Depends(require_user)):
+def api_etl_trigger(user=Depends(require_license_module("dashboard", admin_only=True))):
     _recover_stale()
 
     live = read_live()
@@ -592,9 +809,128 @@ def api_etl_trigger(user=Depends(require_user)):
     return {"ok": True, "pid": proc.pid}
 
 
+class SapConfigRequest(BaseModel):
+    ashost: str
+    sysnr: str = "00"
+    client: str = "100"
+    user: str
+    passwd: str
+    lang: str = "ES"
+
+
+@app.get("/api/onboarding/status")
+def api_onboarding_status(user=Depends(require_license_module("dashboard", admin_only=True))):
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    source = config.get("source", {})
+    src_type = source.get("type", "csv")
+    src_cfg = source.get("config", {})
+    configured = bool(src_cfg.get("ashost") and src_cfg.get("user")) if src_type == "sap" else True
+    return {
+        "source_type": src_type,
+        "configured": configured,
+        "ashost": src_cfg.get("ashost", ""),
+        "sysnr": src_cfg.get("sysnr", "00"),
+        "client": src_cfg.get("client", "100"),
+        "user": src_cfg.get("user", ""),
+        "lang": src_cfg.get("lang", "ES"),
+        "has_password": bool(src_cfg.get("passwd")),
+    }
+
+
+@app.post("/api/onboarding/test-sap")
+def api_onboarding_test_sap(body: SapConfigRequest, user=Depends(require_license_module("dashboard", admin_only=True))):
+    start = time.perf_counter()
+    sap_cfg = {
+        "ashost": body.ashost.strip(),
+        "sysnr": body.sysnr.strip() or "00",
+        "client": body.client.strip() or "100",
+        "user": body.user.strip(),
+        "passwd": body.passwd,
+        "lang": body.lang.strip().upper() or "ES",
+    }
+    if not sap_cfg["ashost"] or not sap_cfg["user"]:
+        raise HTTPException(status_code=400, detail="faltan_parametros_obligatorios")
+
+    try:
+        from sources.sap.connector import SAPConnector
+        conn = SAPConnector(sap_cfg)
+        conn.connect()
+        conn.ping()
+        conn.close()
+        latency = round((time.perf_counter() - start) * 1000, 2)
+        return {"ok": True, "latency_ms": latency, "message": f"Conexión exitosa con SAP ({latency} ms)"}
+    except ImportError:
+        return JSONResponse(
+            status_code=501,
+            content={"ok": False, "error": "pyrfc_not_installed", "message": "El SDK de SAP NW RFC no está instalado en este entorno."},
+        )
+    except Exception as exc:
+        latency = round((time.perf_counter() - start) * 1000, 2)
+        return JSONResponse(
+            status_code=400,
+            content={"ok": False, "error": "sap_connection_error", "message": str(exc), "latency_ms": latency},
+        )
+
+
+@app.post("/api/onboarding/save-sap")
+def api_onboarding_save_sap(body: SapConfigRequest, user=Depends(require_license_module("dashboard", admin_only=True))):
+    import json
+    config_path = os.environ.get("ETL_CONFIG") or "config.json"
+    if not os.path.exists(config_path):
+        raise HTTPException(status_code=404, detail="config_no_encontrado")
+
+    with open(config_path, "r", encoding="utf-8") as fh:
+        cfg = json.load(fh)
+
+    if not isinstance(cfg.get("source"), dict):
+        cfg["source"] = {"type": "sap", "config": {}}
+    cfg["source"]["type"] = "sap"
+    src_cfg = cfg["source"].setdefault("config", {})
+    src_cfg["ashost"] = body.ashost.strip()
+    src_cfg["sysnr"] = body.sysnr.strip() or "00"
+    src_cfg["client"] = body.client.strip() or "100"
+    src_cfg["user"] = body.user.strip()
+    if body.passwd:
+        src_cfg["passwd"] = body.passwd
+    src_cfg["lang"] = body.lang.strip().upper() or "ES"
+
+    with open(config_path, "w", encoding="utf-8") as fh:
+        json.dump(cfg, fh, indent=2, ensure_ascii=False)
+
+    return {"ok": True, "message": "Configuración SAP guardada correctamente"}
+
+
 def _page(name):
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", name)
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", name)
     return FileResponse(path)
+
+
+def _check_page_license():
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    try:
+        lic = get_manager(config).get_license()
+    except LicenseError:
+        return False
+    state = lic.state(time.time())
+    if state in (LicenseState.EXPIRED, LicenseState.SUSPENDED, LicenseState.REVOKED):
+        return False
+    if not lic.has("dashboard"):
+        return False
+    return True
+
+
+def _check_page_license():
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    try:
+        lic = get_manager(config).get_license()
+    except LicenseError:
+        return False
+    state = lic.state(time.time())
+    if state in (LicenseState.EXPIRED, LicenseState.SUSPENDED, LicenseState.REVOKED):
+        return False
+    if not lic.has("dashboard"):
+        return False
+    return True
 
 
 _LICENSE_MESSAGES = {
@@ -631,6 +967,8 @@ def api_license(user=Depends(require_user)):
 def root(user=Depends(current_user_or_none)):
     if user is None:
         return RedirectResponse(url="/login", status_code=307)
+    if not _check_page_license():
+        return RedirectResponse(url="/derivadas", status_code=307)
     return RedirectResponse(
         url="/panel" if user["role"] == "admin" else "/derivadas",
         status_code=307,
@@ -655,6 +993,8 @@ def page_etl(user=Depends(current_user_or_none)):
         return RedirectResponse(url="/login", status_code=307)
     if user["role"] != "admin":
         raise HTTPException(status_code=403, detail="forbidden")
+    if not _check_page_license():
+        return _page("license.html")
     return _page("etl.html")
 
 
@@ -664,6 +1004,8 @@ def page_panel(user=Depends(current_user_or_none)):
         return RedirectResponse(url="/login", status_code=307)
     if user["role"] != "admin":
         raise HTTPException(status_code=403, detail="forbidden")
+    if not _check_page_license():
+        return _page("license.html")
     return _page("panel.html")
 
 
@@ -680,14 +1022,6 @@ def api_derived_views(user=Depends(require_license_module("dashboard"))):
 def page_derivadas(user=Depends(current_user_or_none)):
     if user is None:
         return RedirectResponse(url="/login", status_code=307)
-    config = load_config(os.environ.get("ETL_CONFIG"))
-    try:
-        lic = get_manager(config).get_license()
-    except LicenseError:
-        return _page("license.html")
-    state = lic.state(time.time())
-    if state in (LicenseState.EXPIRED, LicenseState.SUSPENDED, LicenseState.REVOKED):
-        return _page("license.html")
-    if not lic.has("dashboard"):
+    if not _check_page_license():
         return _page("license.html")
     return _page("derivadas.html")

@@ -129,7 +129,7 @@ ACTIVE/GRACE. Falla + sin gracia → bloquea los módulos.
 - `python -m license_server.cli keygen` · `customer add|list|disable` ·
   `license issue|renew|revoke|suspend|show`
 
-## Testing
+## Testing y Simulación
 
 - Firma/verificación (clave correcta/incorrecta, expirada, tamper).
 - Estados ACTIVE/GRACE/EXPIRED y cache (hit/vencido/corrupto).
@@ -137,3 +137,5 @@ ACTIVE/GRACE. Falla + sin gracia → bloquea los módulos.
 - Gating: `reporte`/`bi` bloqueados sin módulo; `users add` más allá del límite;
   dashboard bloqueado (403/banner); `etl_runner` omite derived sin licencia.
 - Modo sin licencia: suite existente intacta.
+- **Entorno de Pruebas y Sandbox**: especificado en `2026-08-17-simulacion-licenciamiento-sandbox-design.md`, implementado con `scripts/simulate_licensing.py` (matriz 12 escenarios E01..E12) y `scripts/run_license_sandbox.sh` (puertos dedicados :8082 y :8083).
+

@@ -1,20 +1,35 @@
-# Dashboard + CLI en un solo servicio. El ETL contra SAP se dispara con:
-#   docker compose run --rm etl python -m cli bootstrap   (onboarding: config + conectividad + migraciones)
-#   docker compose run --rm etl python -m cli run
-#   docker compose run --rm etl python -m cli reporte
-# El botón "Sincronizar" del dashboard solo funciona donde el contenedor
-# tenga el SDK SAP montado y pyrfc instalado (imagen ligera: no).
+# Novus ETL + Dashboard + Timer en Docker.
+#
+# Uso básico:
+#   docker compose build
+#   docker compose up -d
+#   docker compose logs -f
+#
+# Comandos CLI dentro del contenedor:
+#   docker compose exec etl runuser -u etl -- /opt/etl/tablas_linux/venv/bin/python -m cli run --config /opt/etl/tablas_linux/config.json
+#   docker compose exec etl runuser -u etl -- /opt/etl/tablas_linux/venv/bin/python -m cli reporte --config /opt/etl/tablas_linux/config.json
+#   docker compose exec etl runuser -u etl -- /opt/etl/tablas_linux/venv/bin/python -m cli bi export --config /opt/etl/tablas_linux/config.json
+#   docker compose exec etl runuser -u etl -- /opt/etl/tablas_linux/venv/bin/python -m cli license inspect --config /opt/etl/tablas_linux/config.json
+
 services:
   etl:
-    build: .
-    image: etl:latest
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    image: novus-etl:latest
+    container_name: novus-etl-app
     restart: unless-stopped
-    env_file:
-      - .env
+    privileged: true
+    cgroup: host
     volumes:
-      - ./config.json:/opt/etl/config.json:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - ./config.json:/etc/etl/config.json:ro
+      - ./data:/var/lib/etl
+      - ./logs:/var/lib/etl/logs
+      - ./output:/var/lib/etl/output
       - /opt/sap/nwrfcsdk:/opt/sap/nwrfcsdk:ro
-      - ./output:/opt/etl/output
     ports:
-      - "8000:8000"
-    command: ["python", "-m", "uvicorn", "dashboard.app:app", "--host", "0.0.0.0", "--port", "8000"]
+      - "${ETL_PORT:-8000}:8000"
+    environment:
+      - TZ=${TZ:-America/Santiago}
+      - ENVIRONMENT=${ENVIRONMENT:-prd}

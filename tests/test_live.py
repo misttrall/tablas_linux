@@ -81,6 +81,9 @@ def test_live_dashboard_endpoint(tmp_path, monkeypatch):
     dashboard_app.app.dependency_overrides[require_user] = lambda: {
         "id": 1, "username": "admin", "role": "admin", "is_root": True,
     }
+    dashboard_app.app.dependency_overrides[dashboard_app.require_license_module("dashboard")] = lambda: {
+        "id": 1, "username": "admin", "role": "admin", "is_root": True,
+    }
     try:
         client = TestClient(dashboard_app.app)
         res = client.get("/api/live")
