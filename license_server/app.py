@@ -1,9 +1,11 @@
 """API HTTP del license server (FastAPI)."""
 
 import os
+import traceback
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import create_engine
 
@@ -16,7 +18,11 @@ class ActivateRequest(BaseModel):
     api_key: str
 
 
-def create_app(engine, private_key_pem: bytes, secret: str) -> FastAPI:
+def _error(status_code: int, detail: str) -> JSONResponse:
+    return JSONResponse(status_code=status_code, content={"error": detail, "code": status_code})
+
+
+def create_app(engine, private_key_pem: bytes) -> FastAPI:
     app = FastAPI(title="Novus License Server")
 
     @app.get("/api/health")
@@ -28,21 +34,39 @@ def create_app(engine, private_key_pem: bytes, secret: str) -> FastAPI:
         customer = license_db.get_customer(engine, body.customer_id)
         if customer is None or not license_db.verify_api_key(
                 customer.api_key_hash, body.api_key):
-            raise HTTPException(status_code=401, detail="credenciales_invalidas")
+            return _error(401, "credenciales_invalidas")
         if customer.status != "active":
-            raise HTTPException(status_code=403, detail="cliente_deshabilitado")
+            return _error(403, "cliente_deshabilitado")
         lic = license_db.get_active_license(engine, body.customer_id)
         if lic is None:
-            raise HTTPException(status_code=403, detail="sin_licencia_activa")
+            return _error(403, "sin_licencia_activa")
         if lic["status"] == "suspended":
-            raise HTTPException(status_code=403, detail="licencia_suspendida")
+            return _error(403, "licencia_suspendida")
         if lic["status"] == "revoked":
-            raise HTTPException(status_code=403, detail="licencia_revocada")
+            return _error(403, "licencia_revocada")
         now = int(datetime.now(timezone.utc).timestamp())
-        claims = dict(lic)
-        claims["iat"] = now
-        claims["exp"] = lic["offline_until"]
-        return {"token": sign_claims(claims, private_key_pem), "claims": claims}
+        claims = {
+            "customer_id": lic["customer_id"],
+            "license_id": lic["license_id"],
+            "status": lic["status"],
+            "valid_from": lic["valid_from"],
+            "valid_until": lic["valid_until"],
+            "offline_until": lic["offline_until"],
+            "modules": lic["modules"],
+            "limits": lic["limits"],
+            "iat": now,
+            "exp": lic["offline_until"],
+        }
+        token = sign_claims(claims, private_key_pem)
+        return {
+            "token": token,
+            "valid_until": claims["valid_until"],
+            "offline_until": claims["offline_until"],
+            "modules": claims["modules"],
+            "limits": claims["limits"],
+            "customer_id": claims["customer_id"],
+            "license_id": claims["license_id"],
+        }
 
     return app
 
@@ -70,6 +94,7 @@ def _default_secret() -> str:
 try:  # app de arranque (uvicorn license_server.app:app); los tests usan create_app()
     _engine = _default_engine()
     license_db.init_db(_engine)
-    app = create_app(_engine, _default_private_key(), _default_secret())
+    app = create_app(_engine, _default_private_key())
 except Exception:
+    traceback.print_exc()
     app = None  # sin claves/config el arranque directo fallará con mensaje claro

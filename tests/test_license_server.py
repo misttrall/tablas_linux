@@ -142,7 +142,7 @@ def api_client(keypair):
                         poolclass=StaticPool)
     license_db.init_db(eng)
     priv_pem, _ = keypair
-    return TestClient(create_app(eng, priv_pem, "test-secret"))
+    return TestClient(create_app(eng, priv_pem))
 
 
 @pytest.fixture
@@ -170,7 +170,7 @@ def test_health(api_client):
 def test_activate_ok(keypair, customer_license):
     priv_pem, pub_pem = keypair
     eng = customer_license
-    client = TestClient(create_app(eng, priv_pem, "test-secret"))
+    client = TestClient(create_app(eng, priv_pem))
     res = client.post("/api/activate", json={"customer_id": "empresa_001", "api_key": "clave-1"})
     assert res.status_code == 200
     body = res.json()
@@ -178,37 +178,43 @@ def test_activate_ok(keypair, customer_license):
     assert claims["customer_id"] == "empresa_001"
     assert claims["modules"]["derived"] is True
     assert claims["limits"]["users"] == 5
-    assert body["claims"] == claims
+    assert body["customer_id"] == "empresa_001"
+    assert body["license_id"] == "NOVUS-001"
+    assert body["valid_until"] == claims["valid_until"]
+    assert body["offline_until"] == claims["offline_until"]
+    assert body["modules"] == claims["modules"]
+    assert body["limits"] == claims["limits"]
 
 
 def test_activate_bad_api_key(keypair, customer_license):
     eng = customer_license
-    client = TestClient(create_app(eng, keypair[0], "test-secret"))
+    client = TestClient(create_app(eng, keypair[0]))
     res = client.post("/api/activate", json={"customer_id": "empresa_001", "api_key": "nope"})
     assert res.status_code == 401
-    assert res.json()["detail"] == "credenciales_invalidas"
+    assert res.json() == {"error": "credenciales_invalidas", "code": 401}
 
 
 def test_activate_unknown_customer(keypair, customer_license):
-    client = TestClient(create_app(customer_license, keypair[0], "test-secret"))
+    client = TestClient(create_app(customer_license, keypair[0]))
     res = client.post("/api/activate", json={"customer_id": "otra", "api_key": "x"})
     assert res.status_code == 401
+    assert res.json() == {"error": "credenciales_invalidas", "code": 401}
 
 
 def test_activate_disabled_customer(keypair, customer_license):
     license_db.set_customer_status(customer_license, "empresa_001", "disabled")
-    client = TestClient(create_app(customer_license, keypair[0], "test-secret"))
+    client = TestClient(create_app(customer_license, keypair[0]))
     res = client.post("/api/activate", json={"customer_id": "empresa_001", "api_key": "clave-1"})
     assert res.status_code == 403
-    assert res.json()["detail"] == "cliente_deshabilitado"
+    assert res.json() == {"error": "cliente_deshabilitado", "code": 403}
 
 
 def test_activate_suspended_license(keypair, customer_license):
     license_db.set_license_status(customer_license, "NOVUS-001", "suspended", "suspended")
-    client = TestClient(create_app(customer_license, keypair[0], "test-secret"))
+    client = TestClient(create_app(customer_license, keypair[0]))
     res = client.post("/api/activate", json={"customer_id": "empresa_001", "api_key": "clave-1"})
     assert res.status_code == 403
-    assert res.json()["detail"] == "licencia_suspendida"
+    assert res.json() == {"error": "licencia_suspendida", "code": 403}
 
 
 def test_activate_no_license(keypair):
@@ -218,7 +224,7 @@ def test_activate_no_license(keypair):
     license_db.init_db(eng)
     license_db.create_customer(eng, "empresa_001", "Mi Empresa",
                                license_db.hash_api_key("clave-1"))
-    client = TestClient(create_app(eng, keypair[0], "test-secret"))
+    client = TestClient(create_app(eng, keypair[0]))
     res = client.post("/api/activate", json={"customer_id": "empresa_001", "api_key": "clave-1"})
     assert res.status_code == 403
-    assert res.json()["detail"] == "sin_licencia_activa"
+    assert res.json() == {"error": "sin_licencia_activa", "code": 403}
