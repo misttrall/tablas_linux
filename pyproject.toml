@@ -23,6 +23,7 @@ dependencies = [
     "uvicorn",
     "PyJWT",
     "bcrypt",
+    "cryptography>=42",
 ]
 
 [project.optional-dependencies]
@@ -35,7 +36,7 @@ dev = [
 etl = "cli:main"
 
 [tool.setuptools]
-packages = ["db", "db.sinks", "sources", "sources.sap", "sources.generic", "utils", "dashboard", "dashboard.auth", "derived", "bi"]
+packages = ["db", "db.sinks", "sources", "sources.sap", "sources.generic", "utils", "dashboard", "dashboard.auth", "derived", "bi", "licensing", "license_server"]
 py-modules = ["cli"]
 
 [tool.ruff]
