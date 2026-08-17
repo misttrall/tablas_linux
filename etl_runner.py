@@ -255,44 +255,54 @@ def run_etl_job(config_path=None, tables=None):
 
         if successful and config.get("derived"):
 
-            from derived.materializer import run_deriveds
-
-            logger.info("Materializando modelos derivados")
-
-            update_live(
-                running=True, run_id=run_id, table=None, phase="derived",
-                chunk_index=0, chunk_total=0, rows_so_far=0,
-                elapsed_s=round(time.time() - start_run_time, 1),
-            )
-
-            update_state(
-                running=True,
-                progress=95,
-                status="Generando modelos derivados"
-            )
-
-            derived_start = time.time()
+            from licensing.client import get_manager
 
             try:
-                for name, n_rows, excel_path in run_deriveds(engine=engine, sink=sink, config=config):
+                derived_entitled = get_manager(config).get_license().has("derived")
+            except Exception:
+                derived_entitled = False
+
+            if not derived_entitled:
+                logger.warning("módulo 'derived' no contratado; omitiendo materialización de modelos derivados")
+            else:
+                from derived.materializer import run_deriveds
+
+                logger.info("Materializando modelos derivados")
+
+                update_live(
+                    running=True, run_id=run_id, table=None, phase="derived",
+                    chunk_index=0, chunk_total=0, rows_so_far=0,
+                    elapsed_s=round(time.time() - start_run_time, 1),
+                )
+
+                update_state(
+                    running=True,
+                    progress=95,
+                    status="Generando modelos derivados"
+                )
+
+                derived_start = time.time()
+
+                try:
+                    for name, n_rows, excel_path in run_deriveds(engine=engine, sink=sink, config=config):
+                        if run_id is not None:
+                            upsert_execution_table(
+                                engine, sink, run_id, name,
+                                rows_extracted=n_rows, status="ok",
+                                duration_s=round(time.time() - derived_start, 1),
+                            )
+                        logger.info(f"Modelo '{name}' materializado: {n_rows} filas -> {excel_path}")
+                except Exception as e:
+                    logger.exception(f"Error en modelo derivado: {e}")
                     if run_id is not None:
-                        upsert_execution_table(
-                            engine, sink, run_id, name,
-                            rows_extracted=n_rows, status="ok",
-                            duration_s=round(time.time() - derived_start, 1),
-                        )
-                    logger.info(f"Modelo '{name}' materializado: {n_rows} filas -> {excel_path}")
-            except Exception as e:
-                logger.exception(f"Error en modelo derivado: {e}")
-                if run_id is not None:
-                    try:
-                        upsert_execution_table(
-                            engine, sink, run_id, "<derived>", status="failed",
-                            duration_s=round(time.time() - derived_start, 1),
-                        )
-                    except Exception:
-                        logger.warning("No se pudo registrar el fallo del modelo derivado")
-                raise RuntimeError(f"Error en modelo derivado: {e}")
+                        try:
+                            upsert_execution_table(
+                                engine, sink, run_id, "<derived>", status="failed",
+                                duration_s=round(time.time() - derived_start, 1),
+                            )
+                        except Exception:
+                            logger.warning("No se pudo registrar el fallo del modelo derivado")
+                    raise RuntimeError(f"Error en modelo derivado: {e}")
 
         if failures:
 
