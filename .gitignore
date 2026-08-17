@@ -34,3 +34,6 @@ output/
 # Virtualenv
 venv/
 .venv/
+
+# Claves del license server (nunca se commitean)
+license_server/private_key.pem
