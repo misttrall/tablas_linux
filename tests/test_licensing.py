@@ -124,3 +124,123 @@ def test_verify_rejects_wrong_key(keypair):
     )
     with pytest.raises(LicenseInvalid):
         verify_token(token, other)
+
+
+import json
+import os
+
+from licensing.cache import cache_path, load_cache, save_cache
+from licensing.client import LicenseManager, get_manager, require_license
+
+
+def _config(**license_overrides):
+    lic = {"server": "http://lic.test", "customer_id": "empresa_001",
+           "api_key": "clave-1", "refresh_minutes": 720}
+    lic.update(license_overrides)
+    return {"database": {}, "license": lic}
+
+
+def test_cache_path_uses_customer(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    assert cache_path(_config()) == str(tmp_path / ".novus" / "license-empresa_001.json")
+
+
+def test_cache_roundtrip(tmp_path):
+    data = {"claims": {"customer_id": "e"}, "token": "tok", "fetched_at": 123}
+    path = str(tmp_path / "cache.json")
+    save_cache(path, data)
+    assert load_cache(path) == data
+
+
+def test_cache_corrupt_returns_none(tmp_path):
+    path = tmp_path / "cache.json"
+    path.write_text("{not json")
+    assert load_cache(str(path)) is None
+    assert load_cache(str(tmp_path / "missing.json")) is None
+
+
+class _OfflineTransport:
+    def __init__(self):
+        self.calls = 0
+
+    def __call__(self, server, payload):
+        self.calls += 1
+        raise OSError("sin internet")
+
+
+def test_manager_uses_cache_when_offline(keypair, tmp_path, monkeypatch):
+    priv_pem, pub_pem = keypair
+    pub_path = tmp_path / "pub.pem"
+    pub_path.write_bytes(pub_pem)
+    cache_file = tmp_path / "cache.json"
+    token = sign_claims(_claims(valid_until=NOW + DAY, offline_until=NOW + 8 * DAY), priv_pem)
+    save_cache(str(cache_file), {"claims": {}, "token": token, "fetched_at": NOW})
+
+    transport = _OfflineTransport()
+    monkeypatch.setattr("licensing.client._activate_http", transport)
+
+    mgr = LicenseManager(_config(
+        public_key=str(pub_path), cache_path=str(cache_file), refresh_minutes=0))
+    lic = mgr.get_license()
+    assert lic.state(time.time()) in (LicenseState.ACTIVE, LicenseState.GRACE)
+    assert lic.has("derived") is True
+    assert transport.calls >= 1
+
+
+def test_manager_activates_online(keypair, tmp_path, monkeypatch):
+    priv_pem, pub_pem = keypair
+    pub_path = tmp_path / "pub.pem"
+    pub_path.write_bytes(pub_pem)
+    cache_file = tmp_path / "cache.json"
+    token = sign_claims(_claims(), priv_pem)
+
+    monkeypatch.setattr("licensing.client._activate_http",
+                        lambda server, payload: token)
+    mgr = LicenseManager(_config(public_key=str(pub_path), cache_path=str(cache_file)))
+    lic = mgr.get_license()
+    assert lic.customer_id == "empresa_001"
+    assert lic.state(time.time()) is LicenseState.ACTIVE
+    cached = load_cache(str(cache_file))
+    assert cached and cached["token"] == token
+
+
+def test_manager_require_blocks_module_not_contracted(keypair, tmp_path, monkeypatch):
+    priv_pem, pub_pem = keypair
+    pub_path = tmp_path / "pub.pem"
+    pub_path.write_bytes(pub_pem)
+    cache_file = tmp_path / "cache.json"
+    token = sign_claims(_claims(modules={"dashboard": True}), priv_pem)
+    save_cache(str(cache_file), {"claims": {}, "token": token, "fetched_at": NOW})
+    monkeypatch.setattr("licensing.client._activate_http", lambda server, payload: token)
+    mgr = LicenseManager(_config(public_key=str(pub_path), cache_path=str(cache_file)))
+    with pytest.raises(LicenseNotEntitled):
+        mgr.require("derived")
+    assert mgr.require("dashboard") is not None
+
+
+def test_manager_require_blocks_expired(keypair, tmp_path, monkeypatch):
+    priv_pem, pub_pem = keypair
+    pub_path = tmp_path / "pub.pem"
+    pub_path.write_bytes(pub_pem)
+    cache_file = tmp_path / "cache.json"
+    token = sign_claims(_claims(valid_until=NOW - 2 * DAY, offline_until=NOW - DAY), priv_pem)
+    save_cache(str(cache_file), {"claims": {}, "token": token, "fetched_at": NOW})
+    monkeypatch.setattr("licensing.client._activate_http",
+                        lambda server, payload: (_ for _ in ()).throw(OSError("offline")))
+    mgr = LicenseManager(_config(public_key=str(pub_path), cache_path=str(cache_file)))
+    with pytest.raises(LicenseBlocked):
+        mgr.require("derived")
+
+
+def test_manager_no_license_config_passes(tmp_path):
+    mgr = LicenseManager({"database": {}})
+    assert mgr.get_license().state(time.time()) is LicenseState.NO_LICENSE
+    assert mgr.require("derived") is not None
+    assert mgr.users_limit() is None
+
+
+def test_get_manager_singleton_and_require_license(tmp_path):
+    cfg = _config()
+    assert get_manager(cfg) is get_manager(cfg)
+    lic = require_license({"database": {}}, "bi")
+    assert lic.state(time.time()) is LicenseState.NO_LICENSE
