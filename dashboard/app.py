@@ -21,6 +21,8 @@ from dashboard.auth import require_admin, require_user
 from dashboard.auth.dependencies import current_user_or_none
 from db.db_connection import _connection_string
 from derived.views import derived_views, view_tab_label
+from licensing.client import LicenseError, get_manager
+from licensing.models import LicenseState
 from utils.config_loader import load_config
 from utils.live import _live_file, read_live, update_live
 
@@ -40,6 +42,22 @@ _STALE_SECONDS = 120
 
 # Lock local de etl_runner.acquire_lock; se limpia solo si su dueño murió.
 _ETL_LOCK_FILE = "/tmp/etl_sap.lock"
+
+
+def require_license_module(module):
+    def dependency(user=Depends(require_user)):
+        config = load_config(os.environ.get("ETL_CONFIG"))
+        try:
+            lic = get_manager(config).get_license()
+        except LicenseError as exc:
+            raise HTTPException(status_code=403, detail="licencia_no_verificable") from exc
+        state = lic.state(time.time())
+        if state in (LicenseState.EXPIRED, LicenseState.SUSPENDED, LicenseState.REVOKED):
+            raise HTTPException(status_code=403, detail=f"licencia:{state.value}")
+        if not lic.has(module):
+            raise HTTPException(status_code=403, detail=f"modulo_no_contratado:{module}")
+        return user
+    return dependency
 
 
 def get_engine():
@@ -408,7 +426,7 @@ def _inventory_summary(df, view):
 
 
 @app.get("/api/inventory")
-def api_inventory(user=Depends(require_user)):
+def api_inventory(user=Depends(require_license_module("dashboard"))):
     df, view = _inventory_frame()
     if view is None:
         return {"available": False, "reason": "no_derived"}
@@ -419,7 +437,7 @@ def api_inventory(user=Depends(require_user)):
 
 
 @app.get("/api/inventory/filters")
-def api_inventory_filters(user=Depends(require_user)):
+def api_inventory_filters(user=Depends(require_license_module("dashboard"))):
     df, view = _inventory_frame()
     if view is None or df is None:
         return {"available": False}
@@ -440,7 +458,7 @@ def api_inventory_filters(user=Depends(require_user)):
 def api_inventory_items(centro: str = "", almacen: str = "", area: str = "",
                         low_only: bool = False, q: str = "",
                         limit: int = 100, offset: int = 0,
-                        user=Depends(require_user)):
+                        user=Depends(require_license_module("dashboard"))):
     df, view = _inventory_frame()
     if view is None:
         return {"available": False, "reason": "no_derived"}
@@ -464,13 +482,13 @@ def api_inventory_items(centro: str = "", almacen: str = "", area: str = "",
 
 
 @app.get("/api/inventory/alerts")
-def api_inventory_alerts(limit: int = 500, q: str = "", user=Depends(require_user)):
+def api_inventory_alerts(limit: int = 500, q: str = "", user=Depends(require_license_module("dashboard"))):
     data = api_inventory_items(low_only=True, q=q, limit=limit, offset=0)
     return {"alerts": data.get("rows", [])}
 
 
 @app.get("/api/derived/{name}/summary")
-def api_derived_summary(name: str, user=Depends(require_user)):
+def api_derived_summary(name: str, user=Depends(require_license_module("dashboard"))):
     df, view = _inventory_frame_for(name)
     if view is None:
         raise HTTPException(status_code=404, detail="vista_inexistente")
@@ -480,7 +498,7 @@ def api_derived_summary(name: str, user=Depends(require_user)):
 
 
 @app.get("/api/derived/{name}/filters")
-def api_derived_filters(name: str, user=Depends(require_user)):
+def api_derived_filters(name: str, user=Depends(require_license_module("dashboard"))):
     df, view = _inventory_frame_for(name)
     if view is None:
         raise HTTPException(status_code=404, detail="vista_inexistente")
@@ -498,7 +516,7 @@ def api_derived_filters(name: str, user=Depends(require_user)):
 @app.get("/api/derived/{name}/items")
 def api_derived_items(name: str, centro: str = "", almacen: str = "", area: str = "",
                       low_only: bool = False, q: str = "", limit: int = 100, offset: int = 0,
-                      user=Depends(require_user)):
+                      user=Depends(require_license_module("dashboard"))):
     df, view = _inventory_frame_for(name)
     if view is None:
         raise HTTPException(status_code=404, detail="vista_inexistente")
@@ -516,7 +534,7 @@ def api_derived_items(name: str, centro: str = "", almacen: str = "", area: str 
 
 
 @app.get("/api/derived/{name}/alerts")
-def api_derived_alerts(name: str, limit: int = 500, q: str = "", user=Depends(require_user)):
+def api_derived_alerts(name: str, limit: int = 500, q: str = "", user=Depends(require_license_module("dashboard"))):
     data = api_derived_items(name=name, low_only=True, q=q, limit=limit, offset=0)
     if isinstance(data, dict) and data.get("available") is False:
         return {"alerts": []}
@@ -577,6 +595,36 @@ def _page(name):
     return FileResponse(path)
 
 
+_LICENSE_MESSAGES = {
+    LicenseState.ACTIVE: "",
+    LicenseState.GRACE: "Licencia en período de gracia: renueva para evitar la interrupción del servicio.",
+    LicenseState.EXPIRED: "Licencia vencida. Los datos existentes se conservan; renueva para continuar.",
+    LicenseState.SUSPENDED: "Licencia suspendida por Novus. Contacta a Novus para regularizar.",
+    LicenseState.REVOKED: "Licencia revocada. Contacta a Novus.",
+    LicenseState.NO_LICENSE: "",
+}
+
+
+@app.get("/api/license")
+def api_license(user=Depends(require_user)):
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    try:
+        lic = get_manager(config).get_license()
+    except LicenseError as exc:
+        return {"state": "UNKNOWN", "message": str(exc), "modules": {}, "limits": {}}
+    state = lic.state(time.time())
+    return {
+        "state": state.value,
+        "customer": lic.customer_id,
+        "license": lic.license_id,
+        "valid_until": lic.valid_until,
+        "offline_until": lic.offline_until,
+        "modules": lic.modules,
+        "limits": lic.limits,
+        "message": _LICENSE_MESSAGES.get(state, ""),
+    }
+
+
 @app.get("/", include_in_schema=False)
 def root(user=Depends(current_user_or_none)):
     if user is None:
@@ -618,7 +666,7 @@ def page_panel(user=Depends(current_user_or_none)):
 
 
 @app.get("/api/derived-views")
-def api_derived_views(user=Depends(require_user)):
+def api_derived_views(user=Depends(require_license_module("dashboard"))):
     config = load_config(os.environ.get("ETL_CONFIG"))
     views = [{"name": v.get("name", "inv_bodega"), "tab": view_tab_label(v),
               "table": v.get("name", "inv_bodega"), "columns": _view_columns(v)}
@@ -630,4 +678,14 @@ def api_derived_views(user=Depends(require_user)):
 def page_derivadas(user=Depends(current_user_or_none)):
     if user is None:
         return RedirectResponse(url="/login", status_code=307)
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    try:
+        lic = get_manager(config).get_license()
+    except LicenseError:
+        return _page("license.html")
+    state = lic.state(time.time())
+    if state in (LicenseState.EXPIRED, LicenseState.SUSPENDED, LicenseState.REVOKED):
+        return _page("license.html")
+    if not lic.has("dashboard"):
+        return _page("license.html")
     return _page("derivadas.html")

@@ -409,6 +409,16 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* License banner */
+.license-banner {
+  background: #fdf0dc;
+  color: #7a4e00;
+  border-bottom: 1px solid #eac47e;
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 14px;
+}
+
 /* Responsive */
 @media (max-width: 720px) {
   header { flex-wrap: wrap; gap: 8px; padding: 10px 16px; }

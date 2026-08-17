@@ -194,3 +194,27 @@ def get_manager(config) -> LicenseManager:
 
 def require_license(config, module: str) -> License:
     return get_manager(config).require(module)
+
+
+def require_license_module(module: str):
+    """FastAPI dependency factory: returns user if module is entitled, raises 403 otherwise."""
+    import os
+
+    from fastapi import Depends, HTTPException
+
+    from dashboard.auth.dependencies import require_user
+    from utils.config_loader import load_config
+
+    def dependency(user=Depends(require_user)):
+        config = load_config(os.environ.get("ETL_CONFIG"))
+        try:
+            lic = get_manager(config).get_license()
+        except LicenseError as exc:
+            raise HTTPException(status_code=403, detail="licencia_no_verificable") from exc
+        state = lic.state(time.time())
+        if state in (LicenseState.EXPIRED, LicenseState.SUSPENDED, LicenseState.REVOKED):
+            raise HTTPException(status_code=403, detail=f"licencia:{state.value}")
+        if not lic.has(module):
+            raise HTTPException(status_code=403, detail=f"modulo_no_contratado:{module}")
+        return user
+    return dependency

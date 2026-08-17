@@ -5,6 +5,9 @@ import os
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
+from licensing.client import LicenseError, get_manager
+from utils.config_loader import load_config
+
 from . import security
 from .dependencies import require_admin, require_user
 from .users import (
@@ -127,6 +130,12 @@ def admin_create_user(body: UserCreate, user=Depends(require_admin)):
     if body.role not in ("user", "admin"):
         raise HTTPException(status_code=400, detail="rol_invalido")
     _validate_password(body.password)
+    try:
+        limit = get_manager(load_config(os.environ.get("ETL_CONFIG"))).users_limit()
+    except LicenseError:
+        raise HTTPException(status_code=403, detail="licencia_no_verificable") from None
+    if limit is not None and len(list_users()) >= limit:
+        raise HTTPException(status_code=403, detail="limite_usuarios")
     try:
         user_id = create_user(
             username=body.username.strip(),

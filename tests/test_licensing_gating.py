@@ -3,10 +3,14 @@ import time
 
 import pandas as pd
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 
 import cli
 import etl_runner
+import dashboard.app as dash_app
+from dashboard.auth import users as auth_users
+from dashboard.auth import engine as auth_engine
 from db.sinks import get_sink
 from licensing import (
     License,
@@ -77,8 +81,14 @@ def _make_config(tmp_path, **license_kwargs):
 
 
 def _patch_manager(monkeypatch, lic):
+    import sys
     import licensing.client
-    monkeypatch.setattr(licensing.client, "get_manager", lambda config: StubManager(lic))
+    import dashboard.app as dash_app_mod
+    auth_router_mod = sys.modules["dashboard.auth.router"]
+    stub = lambda config: StubManager(lic)
+    monkeypatch.setattr(licensing.client, "get_manager", stub)
+    monkeypatch.setattr(dash_app_mod, "get_manager", stub)
+    monkeypatch.setattr(auth_router_mod, "get_manager", stub)
 
 
 def test_report_requires_derived(tmp_path, monkeypatch, capsys):
@@ -231,3 +241,77 @@ def test_etl_runner_skips_derived_when_not_entitled(harness_factory, monkeypatch
 
     etl_runner.run_etl_job()
     assert "ran" not in called
+
+
+# ---------------------------------------------------------------------------
+# Dashboard gating tests (Task 9)
+# ---------------------------------------------------------------------------
+
+
+def dash_client_factory(tmp_path, monkeypatch):
+    cfg_path = tmp_path / "config.json"
+    db_path = tmp_path / "db.sqlite"
+    cfg = {
+        "environment": "qa",
+        "source": {"type": "csv", "config": {"directory": str(tmp_path)}},
+        "database": {"dialect": "sqlite", "database": str(db_path)},
+        "tables": [], "fields": {},
+        "license": {"server": "http://lic.test", "customer_id": "e", "api_key": "k"},
+    }
+    cfg_path.write_text(json.dumps(cfg))
+    assert cli.cmd_migrate(str(cfg_path)) == 0
+    auth_engine.set_engine_provider(
+        lambda: create_engine(f"sqlite:///{db_path}"))
+    auth_users.create_user("admin", "testpass123", role="admin", is_root=True,
+                           must_change_password=False)
+    monkeypatch.setenv("ETL_CONFIG", str(cfg_path))
+    monkeypatch.setenv("ETL_SECRET", "test-secret")
+    client = TestClient(dash_app.app)
+    client.post("/api/auth/login", json={"username": "admin", "password": "testpass123"})
+    return client
+
+
+def test_dashboard_blocks_without_dashboard_module(tmp_path, monkeypatch):
+    _patch_manager(monkeypatch, _license(modules={"derived": True, "bi": True}))
+    client = dash_client_factory(tmp_path, monkeypatch)
+    res = client.get("/api/derived-views")
+    assert res.status_code == 403
+    assert res.json()["detail"] == "modulo_no_contratado:dashboard"
+    res = client.get("/derivadas")
+    assert "licencia" in res.text.lower()
+
+
+def test_dashboard_allows_with_module(tmp_path, monkeypatch):
+    _patch_manager(monkeypatch, _license())
+    client = dash_client_factory(tmp_path, monkeypatch)
+    assert client.get("/api/derived-views").status_code == 200
+    assert client.get("/api/license").status_code == 200
+
+
+def test_dashboard_api_license_reports_state(tmp_path, monkeypatch):
+    _patch_manager(monkeypatch, _license())
+    client = dash_client_factory(tmp_path, monkeypatch)
+    data = client.get("/api/license").json()
+    assert data["state"] == "ACTIVE"
+    assert data["modules"]["derived"] is True
+
+
+def test_dashboard_blocks_blocked_license(tmp_path, monkeypatch):
+    _patch_manager(monkeypatch, _license(status="revoked", modules={"derived": True,
+                                                                    "dashboard": True,
+                                                                    "bi": True}))
+    client = dash_client_factory(tmp_path, monkeypatch)
+    res = client.get("/api/derived-views")
+    assert res.status_code == 403
+    assert res.json()["detail"] == "licencia:REVOKED"
+
+
+def test_admin_create_user_blocks_at_limit(tmp_path, monkeypatch):
+    _patch_manager(monkeypatch, _license(limits={"users": 1}))
+    client = dash_client_factory(tmp_path, monkeypatch)
+    auth_users.create_user("admin2", "testpass123", role="admin", is_root=True,
+                           must_change_password=False)
+    res = client.post("/api/admin/users", json={"username": "usuario", "password": "testpass123",
+                                                "role": "user"})
+    assert res.status_code == 403
+    assert res.json()["detail"] == "limite_usuarios"

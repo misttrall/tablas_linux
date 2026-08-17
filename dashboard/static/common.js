@@ -220,3 +220,18 @@ if (document.readyState === 'loading') {
 } else {
   renderBranding();
 }
+
+async function maybeLicenseBanner() {
+  try {
+    const res = await fetch('/api/license');
+    if (!res.ok) return;
+    const data = await res.json();
+    const blocked = ['GRACE', 'EXPIRED', 'SUSPENDED', 'REVOKED'];
+    if (!blocked.includes(data.state) || !data.message) return;
+    const banner = document.createElement('div');
+    banner.className = 'license-banner';
+    banner.textContent = data.message;
+    document.body.prepend(banner);
+  } catch (e) { /* sin licencia local: no molestar */ }
+}
+document.addEventListener('DOMContentLoaded', maybeLicenseBanner);
