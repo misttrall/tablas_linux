@@ -37,7 +37,7 @@ etl = "cli:main"
 
 [tool.setuptools]
 packages = ["db", "db.sinks", "sources", "sources.sap", "sources.generic", "utils", "dashboard", "dashboard.auth", "derived", "bi", "licensing", "license_server"]
-py-modules = ["cli"]
+py-modules = ["cli", "etl_runner"]
 
 [tool.ruff]
 line-length = 120
