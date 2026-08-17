@@ -1,5 +1,14 @@
 import time
 
+import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ed25519
+
+import jwt
+
+from licensing.validator import verify_token
+from license_server.signing import sign_claims
+
 from licensing import (
     License,
     LicenseBlocked,
@@ -56,3 +65,62 @@ def test_exceptions_hierarchy():
     assert issubclass(LicenseBlocked, LicenseError)
     assert issubclass(LicenseUnreachable, LicenseError)
     assert issubclass(LicenseNotEntitled, LicenseError)
+
+
+@pytest.fixture(scope="module")
+def keypair():
+    private_key = ed25519.Ed25519PrivateKey.generate()
+    priv_pem = private_key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    )
+    pub_pem = private_key.public_key().public_bytes(
+        serialization.Encoding.PEM,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    return priv_pem, pub_pem
+
+
+def _claims(**overrides):
+    base = {
+        "customer_id": "empresa_001", "license_id": "NOVUS-001", "status": "active",
+        "valid_from": NOW - DAY, "valid_until": NOW + DAY, "offline_until": NOW + 8 * DAY,
+        "modules": {"derived": True}, "limits": {"users": 5},
+        "iat": NOW, "exp": NOW + 8 * DAY,
+    }
+    base.update(overrides)
+    return base
+
+
+def test_sign_and_verify_roundtrip(keypair):
+    priv_pem, pub_pem = keypair
+    token = sign_claims(_claims(), priv_pem)
+    claims = verify_token(token, pub_pem)
+    assert claims["customer_id"] == "empresa_001"
+    assert claims["modules"] == {"derived": True}
+
+
+def test_verify_rejects_tampered_token(keypair):
+    priv_pem, pub_pem = keypair
+    token = sign_claims(_claims(), priv_pem)
+    header, payload, sig = token.split(".")
+    import base64, json
+    padded = payload + "=" * (-len(payload) % 4)
+    decoded = json.loads(base64.urlsafe_b64decode(padded))
+    decoded["valid_until"] = NOW + 3650 * DAY
+    raw = json.dumps(decoded).encode().rstrip(b"=")
+    tampered = header + "." + base64.urlsafe_b64encode(raw).decode().rstrip("=") + "." + sig
+    with pytest.raises(LicenseInvalid):
+        verify_token(tampered, pub_pem)
+
+
+def test_verify_rejects_wrong_key(keypair):
+    priv_pem, pub_pem = keypair
+    token = sign_claims(_claims(), priv_pem)
+    other = ed25519.Ed25519PrivateKey.generate().public_key().public_bytes(
+        serialization.Encoding.PEM,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    with pytest.raises(LicenseInvalid):
+        verify_token(token, other)
