@@ -138,5 +138,11 @@
     "logo": "/static/novus-logo.png",
     "color": "#EA7222",
     "footer": "Novus IT · Datos e Inteligencia de Negocios"
+  },
+  "license": {
+    "server": "https://lic.novusit.cl",
+    "customer_id": "empresa_001",
+    "api_key": "cambiar-por-api-key-del-cliente",
+    "refresh_minutes": 720
   }
 }

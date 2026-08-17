@@ -116,6 +116,19 @@
         "footer": { "type": "string" }
       },
       "additionalProperties": true
+    },
+    "license": {
+      "description": "Activación online de la licencia Novus (opcional; sin ella todo queda habilitado).",
+      "type": "object",
+      "properties": {
+        "server": { "type": "string" },
+        "customer_id": { "type": "string" },
+        "api_key": { "type": "string" },
+        "public_key": { "type": "string" },
+        "cache_path": { "type": "string" },
+        "refresh_minutes": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": true
     }
   },
   "additionalProperties": true,

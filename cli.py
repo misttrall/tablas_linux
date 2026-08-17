@@ -133,6 +133,12 @@ def cmd_run(config_path, tables):
 
 def cmd_reporte(config_path, tabla=None):
     config = load_config(config_path)
+    from licensing.client import LicenseError, require_license
+    try:
+        require_license(config, "derived")
+    except LicenseError as exc:
+        print(f"[error] {exc}")
+        return 1
     if not config.get("derived"):
         print("No hay sección 'derived' en config; nada que generar")
         return 0
@@ -210,6 +216,11 @@ def cmd_bootstrap(config_path, with_derived=False, skip_sap=False):
         print("[warn] verificación de fuente omitida (--skip-sap)")
 
     if with_derived and config.get("derived"):
+        from licensing.client import LicenseError, require_license
+        try:
+            require_license(config, "derived")
+        except LicenseError as exc:
+            return fail(f"módulo derived no contratado: {exc}")
         from db.sinks import get_sink
         from derived.materializer import run_deriveds
         try:
@@ -255,6 +266,12 @@ def cmd_bi(config_path, action, out_dir="output/bi"):
     from bi.manifest import build_manifest, manifest_to_json
 
     config = load_config(config_path)
+    from licensing.client import LicenseError, require_license
+    try:
+        require_license(config, "bi")
+    except LicenseError as exc:
+        print(f"[error] {exc}")
+        return 1
     engine = _engine_from_config(config)
 
     if action == "manifest":
@@ -277,6 +294,58 @@ def cmd_bi(config_path, action, out_dir="output/bi"):
     return 1
 
 
+def _fmt_epoch(epoch):
+    import datetime
+    return datetime.datetime.fromtimestamp(epoch).strftime("%Y-%m-%d") if epoch else "-"
+
+
+def cmd_license(config_path, action):
+    import time
+    config = load_config(config_path)
+    from licensing.client import LicenseError, get_manager
+    mgr = get_manager(config)
+    if action == "status":
+        try:
+            lic = mgr.get_license()
+        except LicenseError as exc:
+            print(f"[error] {exc}")
+            return 1
+        print(f"estado: {lic.state(time.time()).value}")
+        print(f"cliente: {lic.customer_id or '-'} · licencia: {lic.license_id or '-'}")
+        print(f"válida hasta: {_fmt_epoch(lic.valid_until)} · gracia hasta: {_fmt_epoch(lic.offline_until)}")
+        if lic.modules is None:
+            print("módulos: todos (sin licenciar)")
+        else:
+            on = ", ".join(sorted(m for m, ok in lic.modules.items() if ok)) or "(ninguno)"
+            print(f"módulos: {on}")
+        if lic.limits:
+            print("límites: " + ", ".join(f"{k}={v}" for k, v in sorted(lic.limits.items())))
+        return 0
+    if action == "activate":
+        try:
+            mgr.force_activate()
+        except LicenseError as exc:
+            print(f"[error] {exc}")
+            return 1
+        print("[ok] licencia activada")
+        return 0
+    if action == "validate":
+        import time as _time
+        try:
+            lic = mgr.validate()
+        except LicenseError as exc:
+            print(f"[error] {exc}")
+            return 1
+        print(f"[ok] firma válida · estado {lic.state(_time.time()).value}")
+        return 0
+    if action == "clear-cache":
+        mgr.clear_cache()
+        print("[ok] caché de licencia eliminada")
+        return 0
+    print("Uso: etl license {status|activate|validate|clear-cache}")
+    return 1
+
+
 def _add_config_arg(subparser):
     subparser.add_argument(
         "--config", default=None,
@@ -294,14 +363,23 @@ def cmd_users(args):
     auth_engine.set_engine_provider(
         lambda: _engine_from_config(config, fast_executemany=False))
     try:
-        return _cmd_users_action(auth_users, args)
+        return _cmd_users_action(auth_users, args, config)
     finally:
         auth_engine.set_engine_provider(previous)
 
 
-def _cmd_users_action(auth_users, args):
+def _cmd_users_action(auth_users, args, config):
     action = args.users_action
     if action == "add":
+        from licensing.client import LicenseError, get_manager
+        try:
+            limit = get_manager(config).users_limit()
+        except LicenseError as exc:
+            print(f"[error] {exc}")
+            return 1
+        if limit is not None and len(auth_users.list_users()) >= limit:
+            print(f"[error] límite de usuarios alcanzado ({limit}); contacta a Novus")
+            return 1
         role = "admin" if args.root else args.role
         try:
             user_id = auth_users.create_user(
@@ -430,6 +508,14 @@ def main(argv=None):
     pass_parser.add_argument("--password", required=True)
     _add_config_arg(pass_parser)
 
+    license_parser = subparsers.add_parser(
+        "license", help="Estado y gestión de la licencia de la empresa")
+    license_sub = license_parser.add_subparsers(dest="license_action", required=True)
+    for action_name in ("status", "activate", "validate", "clear-cache"):
+        action_parser = license_sub.add_parser(action_name,
+                                               help=f"{action_name} de la licencia")
+        _add_config_arg(action_parser)
+
     args = parser.parse_args(argv)
 
     if args.command == "run":
@@ -454,6 +540,8 @@ def main(argv=None):
         if args.bi_action == "guide":
             return cmd_bi(args.config, "guide")
         return 1
+    if args.command == "license":
+        return cmd_license(args.config, args.license_action)
     if args.command == "users":
         return cmd_users(args)
 
