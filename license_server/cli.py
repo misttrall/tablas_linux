@@ -82,9 +82,10 @@ def cmd_keygen():
 def cmd_customer_add(args):
     engine = _engine()
     license_db.init_db(engine)
+    secret = os.environ.get("NOVUS_LICENSE_SERVER_SECRET", "")
     try:
         license_db.create_customer(engine, args.id, args.name,
-                                   license_db.hash_api_key(args.api_key))
+                                   license_db.hash_api_key(secret, args.api_key))
     except Exception as exc:
         print(f"[error] no se pudo crear el cliente: {exc}")
         return 1
@@ -136,7 +137,8 @@ def cmd_license_issue(args):
         "iat": now,
         "exp": lic["offline_until"],
     }
-    private_key_pem = open(_PRIVATE_KEY_PATH, "rb").read()
+    with open(_PRIVATE_KEY_PATH, "rb") as fh:
+        private_key_pem = fh.read()
     token = sign_claims(claims, private_key_pem)
     print(f"[ok] licencia '{args.license_id}' emitida para '{args.customer}'")
     print(f"JWT:\n{token}")

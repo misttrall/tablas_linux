@@ -10,6 +10,7 @@ from license_server import db as license_db
 @pytest.fixture
 def env(tmp_path, monkeypatch):
     monkeypatch.setenv("NOVUS_LICENSE_DB", str(tmp_path / "server.db"))
+    monkeypatch.setenv("NOVUS_LICENSE_SERVER_SECRET", "test-secret")
     engine = server_cli._engine()
     license_db.init_db(engine)
     return tmp_path

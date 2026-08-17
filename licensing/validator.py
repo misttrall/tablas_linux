@@ -7,6 +7,8 @@ from .models import LicenseInvalid
 
 
 def verify_token(token: str, public_key_pem: bytes) -> dict:
+    if public_key_pem is None:
+        raise LicenseInvalid("no se encontró la clave pública de verificación")
     key = load_pem_public_key(public_key_pem)
     try:
         return jwt.decode(token, key, algorithms=["EdDSA"], options={"verify_exp": False})

@@ -22,7 +22,7 @@ def _error(status_code: int, detail: str) -> JSONResponse:
     return JSONResponse(status_code=status_code, content={"error": detail, "code": status_code})
 
 
-def create_app(engine, private_key_pem: bytes) -> FastAPI:
+def create_app(engine, private_key_pem: bytes, secret: str = "") -> FastAPI:
     app = FastAPI(title="Novus License Server")
 
     @app.get("/api/health")
@@ -33,7 +33,7 @@ def create_app(engine, private_key_pem: bytes) -> FastAPI:
     def activate(body: ActivateRequest):
         customer = license_db.get_customer(engine, body.customer_id)
         if customer is None or not license_db.verify_api_key(
-                customer.api_key_hash, body.api_key):
+                secret, body.api_key, customer.api_key_hash):
             return _error(401, "credenciales_invalidas")
         if customer.status != "active":
             return _error(403, "cliente_deshabilitado")
@@ -87,7 +87,8 @@ def _default_private_key() -> bytes:
 try:  # app de arranque (uvicorn license_server.app:app); los tests usan create_app()
     _engine = _default_engine()
     license_db.init_db(_engine)
-    app = create_app(_engine, _default_private_key())
+    _secret = os.environ.get("NOVUS_LICENSE_SERVER_SECRET", "")
+    app = create_app(_engine, _default_private_key(), _secret)
 except Exception:
     traceback.print_exc()
     app = None  # sin claves/config el arranque directo fallará con mensaje claro

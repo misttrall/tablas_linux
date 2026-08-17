@@ -29,9 +29,18 @@ def _activate_http(server, payload: dict) -> str:
         with urllib.request.urlopen(req, timeout=10) as resp:
             body = json.loads(resp.read().decode())
     except urllib.error.HTTPError as exc:
+        detail = ""
+        try:
+            body = json.loads(exc.read().decode())
+            detail = body.get("error", "")
+        except Exception:
+            pass
+        msg = f"activación rechazada por el servidor ({exc.code})"
+        if detail:
+            msg += f": {detail}"
         if exc.code in (401, 403, 404):
-            raise LicenseBlocked(f"activación rechazada por el servidor ({exc.code})") from exc
-        raise LicenseUnreachable(f"error de red al activar ({exc.code})") from exc
+            raise LicenseBlocked(msg) from exc
+        raise LicenseUnreachable(msg) from exc
     except OSError as exc:
         raise LicenseUnreachable(f"no se pudo contactar el servidor de licencias: {exc}") from exc
     return body["token"]
@@ -194,27 +203,3 @@ def get_manager(config) -> LicenseManager:
 
 def require_license(config, module: str) -> License:
     return get_manager(config).require(module)
-
-
-def require_license_module(module: str):
-    """FastAPI dependency factory: returns user if module is entitled, raises 403 otherwise."""
-    import os
-
-    from fastapi import Depends, HTTPException
-
-    from dashboard.auth.dependencies import require_user
-    from utils.config_loader import load_config
-
-    def dependency(user=Depends(require_user)):
-        config = load_config(os.environ.get("ETL_CONFIG"))
-        try:
-            lic = get_manager(config).get_license()
-        except LicenseError as exc:
-            raise HTTPException(status_code=403, detail="licencia_no_verificable") from exc
-        state = lic.state(time.time())
-        if state in (LicenseState.EXPIRED, LicenseState.SUSPENDED, LicenseState.REVOKED):
-            raise HTTPException(status_code=403, detail=f"licencia:{state.value}")
-        if not lic.has(module):
-            raise HTTPException(status_code=403, detail=f"modulo_no_contratado:{module}")
-        return user
-    return dependency

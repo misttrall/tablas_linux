@@ -2,6 +2,7 @@
 
 import datetime as _dt
 import hashlib
+import hmac
 
 from sqlalchemy import create_engine, text
 
@@ -52,12 +53,13 @@ def _now_iso():
     return _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds")
 
 
-def hash_api_key(key: str) -> str:
-    return hashlib.sha256(key.encode()).hexdigest()
+def hash_api_key(secret: str, api_key: str) -> str:
+    return hmac.new(secret.encode(), api_key.encode(), hashlib.sha256).hexdigest()
 
 
-def verify_api_key(stored: str, provided: str) -> bool:
-    return hash_api_key(provided) == stored
+def verify_api_key(secret: str, provided: str, expected_hash: str) -> bool:
+    computed = hash_api_key(secret, provided)
+    return hmac.compare_digest(computed, expected_hash)
 
 
 def create_customer(engine, customer_id, name, api_key_hash):
