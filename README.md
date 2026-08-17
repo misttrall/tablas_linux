@@ -21,7 +21,7 @@ Producto de **Novus IT** ([novusit.cl](https://novusit.cl)) dentro del pilar **D
 - **Aislamiento de errores por tabla**: una tabla fallida no aborta el job; el job termina con exit != 0 para alertar al monitor.
 - **Migraciones idempotentes por dialecto** (`migrations/`), registradas en `schema_migrations`.
 - **Modelo derivado declarativo por cliente** (`config.derived`): sin vistas SQL por cliente.
-- **Dashboard FastAPI** con auth (JWT + bcrypt), pestañas `#etl` e `#inventario`, y botón Sincronizar.
+- **Dashboard FastAPI** con auth (JWT + bcrypt), páginas `/derivadas` (vistas) y `/etl` (admin, con botón Sincronizar).
 - **Observabilidad**: estado en vivo compartido runner/dashboard (`ETL_LIVE_FILE`), estado general (`/tmp/etl_state.json`) y logs persistentes (`logs/etl.log`).
 
 ## Arquitectura
@@ -157,6 +157,8 @@ Todas las operaciones están en `cli.py`. Se invocan con `python -m cli <comando
 | `users add` | `--username U --password P [--role user\|admin] [--root] [--no-force-password-change] [--config ruta]` | Crea un usuario del dashboard |
 | `users list` | `[--config ruta]` | Lista los usuarios del dashboard |
 | `users set-password` | `--username U --password P [--config ruta]` | Cambia la password de un usuario |
+| `bi` | `{manifest\|export\|guide} [--config ruta]` | Entregable BI (ver [Entregable BI](#entregable-bi)) |
+| `license` | `{status\|inspect\|activate\|validate\|clear-cache} [--config ruta]` | Licenciamiento cliente (ver [Licenciamiento](#licenciamiento-licensing--license_server)) |
 
 Ejemplos:
 
@@ -285,6 +287,8 @@ La guía de conectividad (`etl bi guide`) parametriza las instrucciones por la B
 
 El dashboard web es la alternativa white-label para clientes sin Power BI. Su branding vive en `config.dashboard` (bloque opcional: `title`, `logo`, `color`, `footer`), y cada vista derivada declara su pestaña en `tab` y su columna rótulo en `row_label` (opcionales; sin `tab` se deriva un nombre legible de `name`).
 
+> **Limitación white-label**: `config.dashboard` cubre el título, logo, color y footer del runtime, pero **no** el `<title>` del navegador (hardcodeado "Novus BI"), el favicon ni algunos textos Novus fijos en los templates (p. ej. el email de soporte en `license.html`).
+
 Onboarding de un cliente BI: config `config.json` por empresa → `python -m cli migrate` → `python -m cli bootstrap` → materializar y entregar (`python -m cli reporte` + `etl bi manifest|export|guide`, o el dashboard white-label).
 
 Spec del entregable: `docs/superpowers/specs/2026-08-15-entregable-bi-white-label-design.md`.
@@ -334,16 +338,42 @@ Navegación por rol: **admin** = `ETL / Panel / Vistas`; **user** = `Vistas`.
 Levantar el demo en el puerto 8001 (no toca instancias ajenas; puerto 8000 queda intacto):
 
 ```bash
-scripts/run_demo.sh start     # start | stop | status | log
+scripts/run_demo.sh start     # start | stop | restart | status | log
 ETL_SECRET=... scripts/run_demo.sh start   # secret sobreescribible
 ```
+
+> El puerto **8001 es exclusivamente del entorno de demo**; la producción (instalación systemd) corre en el **8000**. Los usuarios y datos demo los crea `scripts/init_demo_data.py`: `admin`/`admin` y `analista`/`demo1234`.
 
 Verificar el dashboard con Playwright (login, branding, navegación por rol, redirecciones, columnas de Vistas, filtros, botón Sincronizar y ausencia de errores JS):
 
 ```bash
 .venv/bin/python scripts/verify_dashboard.py            # contra http://127.0.0.1:8001
-.venv/bin/python scripts/verify_dashboard.py --base http://127.0.0.1:9000 --username demo --password demo1234
+.venv/bin/python scripts/verify_dashboard.py --base http://127.0.0.1:9000 --username analista --password demo1234
 ```
+
+### Sandbox y simulación de licencias
+
+`scripts/run_license_sandbox.sh` levanta en < 2 s un entorno aislado y completo (BD temporales, sin colisión con producción :8000 ni demo :8001): license server en **:8082** y un dashboard en **:8083** (login `admin`/`admin`). Config en `/tmp/etl_sandbox/config.sandbox.json`.
+
+```bash
+scripts/run_license_sandbox.sh start            # también: stop | restart | status | clean
+scripts/run_license_sandbox.sh log server       # o log dashboard
+scripts/run_license_sandbox.sh scenario E05     # aplica un escenario en caliente
+```
+
+Escenarios disponibles (misma numeración que `scripts/simulate_licensing.py`): E01 licencia activa completa · E02 solo `dashboard` · E03 sin `dashboard` · E04 límite de usuarios alcanzado · E05 gracia (`GRACE`) · E06 vencida · E07 suspendida · E08 revocada · E09 servidor offline con caché válido · E10 offline sin caché · E11 firma adulterada · E12 `NO_LICENSE` (sin bloque `license`).
+
+El simulador CLI cubre la misma matriz y además genera tokens a medida o inyecta escenarios en un config:
+
+```bash
+.venv/bin/python scripts/simulate_licensing.py run-all [--md|--json]   # matriz E01-E12
+.venv/bin/python scripts/simulate_licensing.py token --customer empresa_001 \
+  --license-id NOVUS-QA-999 --status active --valid-days 45 --grace-days 10 \
+  --modules derived,dashboard --limits users=3
+.venv/bin/python scripts/simulate_licensing.py scenario E02 --config config.json
+```
+
+Las pruebas automatizadas de licenciamiento viven en `tests/test_licensing*.py` y `tests/test_license_server*.py` (E2E en `tests/test_licensing_simulation_e2e.py`).
 
 
 ### Endpoints de la API
@@ -353,7 +383,8 @@ Públicos:
 | Endpoint | Descripción |
 |---|---|
 | `GET /api/health` | Healthcheck (verifica la conexión a la BD destino) |
-| `POST /api/auth/login` | Login; fija la cookie `etl_session` |
+| `GET /api/branding` | Branding white-label desde `config.dashboard` (título, logo, color, footer) |
+| `POST /api/auth/login` | Login; fija la cookie `etl_session` (rate limit: 10 intentos/min/IP) |
 | `GET /static/*` | Assets estáticos |
 
 Requieren sesión (`user`):
@@ -365,7 +396,7 @@ Requieren sesión (`user`):
 | `POST /api/auth/password` | Cambia la password propia (`current_password` + `new_password`) |
 | `GET /api/last-sync` | Última corrida registrada |
 | `GET /api/live` | Estado en vivo de la extracción (dispara la auto-recuperación) |
-| `POST /api/etl/trigger` | Dispara el ETL bajo demanda; `409` con `already_running` si hay una corrida activa |
+| `GET /api/license` | Estado de la licencia (sin gate de módulo) |
 | `GET /api/inventory` | Resumen de la primera visión derivada (materiales, valor, alertas, riesgo) |
 | `GET /api/inventory/filters` | Valores distintos de centro/almacén/área para los filtros |
 | `GET /api/inventory/items` | Inventario paginado (`?centro=&almacen=&area=&low_only=&q=&limit=&offset=`) |
@@ -375,19 +406,35 @@ Requieren `admin`:
 
 | Endpoint | Descripción |
 |---|---|
+| `POST /api/etl/trigger` | Dispara el ETL bajo demanda; `409` con `already_running` si hay una corrida activa |
 | `GET /api/executions` | Últimas corridas (`?last=N`, default 10) |
 | `GET /api/progress` | Progreso por tabla |
 | `GET /api/dashboard` | Agregado para el panel web |
 | `GET /api/tables` | Stats por tabla de una corrida (`?run_id=N`) |
+| `GET /api/onboarding/status` | Estado del onboarding asistido |
+| `POST /api/onboarding/test-sap` | Prueba de conectividad SAP (latencia, validación de parámetros) |
+| `POST /api/onboarding/save-sap` | Guarda los parámetros de conexión SAP en el config |
 | `GET /api/admin/users` | Lista usuarios |
-| `POST /api/admin/users` | Crea usuario |
+| `POST /api/admin/users` | Crea usuario (respeta el límite `users` de la licencia) |
 | `PATCH /api/admin/users/{user_id}` | Cambia rol / activa o desactiva |
 | `DELETE /api/admin/users/{user_id}` | Elimina usuario (root protegido) |
 | `POST /api/admin/users/{user_id}/password` | Resetea password |
 
+Requieren sesión + módulo `bi`:
+
+| Endpoint | Descripción |
+|---|---|
+| `GET /api/bi/manifest` | Manifiesto del dataset (JSON) |
+| `GET /api/bi/guide` | Guía de conectividad Power BI por dialecto |
+| `GET /api/bi/export` | Listado de exports disponibles por vista |
+| `GET /api/bi/download/{view}/parquet` | Descarga el Parquet de una vista |
+| `GET /api/bi/download/{view}/csv` | Descarga el CSV de una vista |
+| `GET /api/bi/download/{manifest,guide}` | Descarga el manifiesto / la guía |
+| `GET /api/bi/download-zip` | Bundle ZIP con todo el material BI |
+
 ### Botón Sincronizar y auto-recuperación
 
-El botón **Sincronizar** (pestañas `#etl` y `#inventario`) dispara `POST /api/etl/trigger`, que lanza `cli run` como subproceso desprendido con el mismo `ETL_CONFIG` y `ETL_LIVE_FILE`. Mientras corre, el botón queda deshabilitado y se muestra el progreso en vivo; al terminar se refrescan inventario y corridas. Si ya hay una ejecución activa, responde `409` y la UI lo indica (el lock en BD es la protección real). Los logs del subproceso van a `logs/etl_sync.log`.
+El botón **Sincronizar** (solo en la página `/etl`, admin; `/derivadas` no tiene botón de sincronización) dispara `POST /api/etl/trigger` (endpoint **admin-only**), que lanza `cli run` como subproceso desprendido con el mismo `ETL_CONFIG` y `ETL_LIVE_FILE`. Mientras corre, el botón queda deshabilitado y se muestra el progreso en vivo; al terminar se refrescan inventario y corridas. Si ya hay una ejecución activa, responde `409` y la UI lo indica (el lock en BD es la protección real). Los logs del subproceso van a `logs/etl_sync.log`.
 
 > El botón requiere que el host del dashboard tenga el SDK SAP + pyrfc para poder ejecutar `cli run` (entorno on-premise o contenedor con el SDK montado). En la imagen Docker ligera (sin pyrfc) devolvería un error visible y no lanzaría nada.
 
@@ -399,24 +446,35 @@ El sistema de licenciamiento controla qué módulos de Novus están habilitados 
 
 ### License server (`license_server/`)
 
-API FastAPI que emite tokens JWT firmados con clave ed25519. Se gestiona por CLI:
+API FastAPI que emite tokens JWT firmados con clave ed25519 (`POST /api/activate`, rate limit 30/min; Puerto 8080 vía `scripts/run_license_server.sh`, requiere `NOVUS_LICENSE_SERVER_SECRET`). Se gestiona por CLI:
 
 ```bash
 # 1. Generar par de claves (una sola vez)
-NOVUS_LICENSE_SERVER_SECRET=... python -m license_server.cli keygen
+python -m license_server.cli keygen
 
-# 2. Registrar un cliente
-NOVUS_LICENSE_SERVER_SECRET=... python -m license_server.cli customer add \
-  --id empresa_001 --name "Mi Empresa" --api-key <secreto>
+# 2. Clientes
+python -m license_server.cli customer add --id empresa_001 --name "Mi Empresa" --api-key <secreto>
+python -m license_server.cli customer list
+python -m license_server.cli customer disable --id empresa_001
 
-# 3. Emitir una licencia
-NOVUS_LICENSE_SERVER_SECRET=... python -m license_server.cli license issue \
+# 3. Licencias
+python -m license_server.cli license issue \
   --customer empresa_001 --license-id NOVUS-001 \
-  --valid-until 2026-12-31 --modules derived dashboard --limit users=5
+  --valid-until 2026-12-31 [--valid-from ...] [--grace-days 7] \
+  --modules derived dashboard --limit users=5
+python -m license_server.cli license renew --license-id NOVUS-001 --valid-until 2027-12-31
+python -m license_server.cli license suspend --license-id NOVUS-001
+python -m license_server.cli license revoke  --license-id NOVUS-001
+python -m license_server.cli license show    --license-id NOVUS-001
+python -m license_server.cli license list    [--customer empresa_001]
 
 # Arrancar el servidor
 NOVUS_LICENSE_SERVER_SECRET=... ./scripts/run_license_server.sh  # puerto 8080
 ```
+
+**Seguridad**: el `api_key` se almacena como **HMAC-SHA256 con pepper `NOVUS_LICENSE_SERVER_SECRET`** (comparación constant-time). ⚠️ Perder o rotar el pepper invalida todos los hashes almacenados. La clave privada vive en `license_server/private_key.pem` (0600, gitignored).
+
+**Propagación de revocaciones**: el dashboard sirve la caché local hasta `refresh_minutes` (default 720 = 12 h), por lo que una revocación en el servidor tarda hasta 12 h en reflejarse sin restart. Re-activar en el mismo host sí se detecta de inmediato (cambio de mtime del archivo de caché).
 
 ### Engine cliente (`licensing/`)
 
@@ -456,6 +514,7 @@ Si el bloque `license` no existe, el sistema queda en modo `NO_LICENSE` (todo ha
 
 ```bash
 etl license status       # estado actual, módulos y límites
+etl license inspect      # diagnóstico exhaustivo: cliente, licencia, caché (antigüedad), validez, gracia, módulos y límite de usuarios en uso (ej. "2 / 5 en uso")
 etl license activate     # forzar re-activación contra el servidor
 etl license validate     # validar la firma del caché local
 etl license clear-cache  # eliminar caché (obliga re-activación)
@@ -550,7 +609,7 @@ Variables esperadas en `.env`: `ETL_CONFIG`, `ETL_LIVE_FILE` y las del SDK (`SAP
 
 ## Testing y CI
 
-- **Tests**: `tests/` (pytest; 20 archivos: runners, sinks por dialecto, fuentes, particionado, config, derived, dashboard, auth, live).
+- **Tests**: `tests/` (pytest; 30 archivos, 313 tests: runners, sinks por dialecto, fuentes, particionado, config, derived, dashboard, auth, live, licenciamiento E2E, BI, onboarding).
 - **CI**: `.github/workflows/ci.yml` ejecuta sobre Python 3.12:
   1. `pip install -r requirements-ci.txt` (sin pyrfc).
   2. `python -m pytest -q`.
@@ -570,7 +629,7 @@ No hay SQL por cliente: solo datos en config (qué `MTART`/`MATKL` son insumos, 
 
 ```
 tablas_linux/
-├── cli.py                     # interfaz de línea de comandos
+├── cli.py                     # interfaz de línea de comandos (`etl`)
 ├── etl_runner.py              # orquestación de una corrida ETL
 ├── pyproject.toml             # paquete tablas-etl (comando `etl`)
 ├── config.json                # config del cliente (no versionado)
@@ -608,6 +667,10 @@ tablas_linux/
 │   ├── minimos_import.py      # importa la matriz de mínimos del cliente
 │   ├── views.py               # normaliza config.derived
 │   └── db.py                  # lectura de tablas de la BD destino
+├── bi/                        # entregable BI white-label
+│   ├── manifest.py            # manifiesto del dataset (JSON)
+│   ├── export.py              # export CSV/Parquet (output/bi/)
+│   └── guide.py               # guía de conectividad Power BI por dialecto
 ├── dashboard/                 # dashboard FastAPI
 │   ├── app.py                 # rutas y endpoints de la API
 │   ├── auth/                  # JWT + bcrypt; usuarios en app_users
@@ -615,8 +678,28 @@ tablas_linux/
 │   │   ├── dependencies.py
 │   │   ├── engine.py
 │   │   ├── security.py
-│   │   └── users.py
-│   └── static/                # login.html, etl.html, inventario.html, panel.html, common.css, common.js
+│   │   ├── users.py
+│   │   └── rate_limit.py      # rate limit de login (10/min/IP)
+│   ├── templates/             # HTML: login.html, panel.html, etl.html, derivadas.html, license.html
+│   └── static/                # common.css, common.js, derivadas.js, logos Novus
+├── licensing/                 # engine cliente de licencias
+│   ├── client.py              # LicenseManager (activación, gating)
+│   ├── cache.py               # caché firmada ~/.novus/license-<customer>.json
+│   ├── validator.py           # verificación ed25519
+│   ├── models.py
+│   └── novus_public.pem
+├── license_server/            # servidor de licencias (emisión JWT ed25519)
+│   ├── app.py                 # API /api/activate
+│   ├── cli.py                 # customer/license keygen+CRUD
+│   ├── db.py                  # SQLite novus_license.db
+│   └── signing.py
+├── scripts/                   # helpers de operación, demo y simulación
+│   ├── run_demo.sh            # demo en puerto 8001
+│   ├── init_demo_data.py      # usuarios y datos demo
+│   ├── verify_dashboard.py    # verificación E2E (Playwright)
+│   ├── run_license_server.sh  # license server (8080)
+│   ├── run_license_sandbox.sh # sandbox de licencias (8082/8083)
+│   └── simulate_licensing.py  # simulador de escenarios de licencia
 ├── migrations/                # DDL por dialecto (idempotentes)
 │   ├── mssql/
 │   ├── postgresql/
@@ -641,8 +724,9 @@ tablas_linux/
 │   ├── docker-entrypoint.sh
 │   ├── etl-docker.sh
 │   └── wheels/
+├── docs/                      # specs y documentación interna
 ├── requirements-{base,etl,sap,web,ci}.txt
-├── tests/                     # pytest (20 archivos)
+├── tests/                     # pytest (30 archivos, 313 tests)
 └── .github/workflows/ci.yml   # pytest + ruff
 ```
 

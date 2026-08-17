@@ -17,6 +17,7 @@ dashboard web con autenticación (JWT + bcrypt).
 10. [Rutas y seguridad](#10-rutas-y-seguridad)
 11. [Emitir una licencia para un cliente](#11-emitir-una-licencia-para-un-cliente)
 12. [Entorno de pruebas y simulación de licenciamiento](#12-entorno-de-pruebas-y-simulación-de-licenciamiento)
+13. [Despliegue Docker en VM de cliente](#13-despliegue-docker-en-vm-de-cliente)
 
 ---
 
@@ -32,7 +33,8 @@ corriendo.
 > para SAP hay que montar el SDK NW RFC y el wheel de SAP y usar `--with-sap`
 > (ver [Configuración](#9-configuración)).
 >
-> 🐳 **Despliegue en Docker / VM de Cliente**: Para desplegar la plataforma completa dockerizada, consulta la [Guía de Despliegue en Docker](docs/DESPLIEGUE_DOCKER.md).
+> 🐳 **Despliegue en Docker / VM de Cliente**: ver sección
+> [13. Despliegue Docker en VM de cliente](#13-despliegue-docker-en-vm-de-cliente).
 
 ```bash
 sudo apt install -y python3 python3-venv openssl rsync
@@ -90,9 +92,11 @@ sudo systemctl list-timers etl-sync.timer      # próxima ejecución
 
 Roles:
 
-- **`user`**: inventario, estado, botón Sincronizar y última sincronización.
-- **`admin`**: además, panel de ejecuciones, progreso, tablas, dashboard de
-  agregados y gestión de usuarios.
+- **`user`**: inventario, estado y última sincronización (solo lectura; no
+  dispara sincronizaciones).
+- **`admin`**: además, botón **Sincronizar** (solo en la vista `/etl`), panel
+  de ejecuciones, progreso, tablas, dashboard de agregados y gestión de
+  usuarios.
 - **`is_root`**: admin raíz (el creado por el instalador). **No se puede
   borrar ni degradar**; solo root cambia su propia password.
 
@@ -122,8 +126,8 @@ desactivar, resetear password y eliminar.
 
 - **Programada**: el timer `etl-sync.timer` dispara el ETL cada hora en el
   minuto **:45** (`OnCalendar=*-*-* *:45:00`).
-- **Manual**: botón **Sincronizar** en el dashboard (vista `/etl` o
-  `/inventario`); dispara `cli run --config ...` como subproceso del
+- **Manual**: botón **Sincronizar** en el dashboard (solo admin, vista
+  `/etl`); dispara `cli run --config ...` como subproceso del
   dashboard, heredando el SDK SAP.
 
 Ambos mecanismos usan el **mismo lock** (archivo `/tmp/etl_sap.lock` +
@@ -180,8 +184,9 @@ python -m cli status --last 3 --config config.json
 
 ## 7. Backup y restauración
 
-- **BD destino**: incluye las tablas de control (`etl_control`, `etl_progress`,
-  `etl_execution`, `etl_execution_table`, `app_users`). Backup según la BD
+- **BD destino**: incluye las tablas de control (`etl_execution`,
+  `etl_progress`, `etl_execution_tables`, `app_users`, `schema_migrations`).
+  Backup según la BD
   (dump de SQL Server / PostgreSQL / MySQL / copia del archivo en SQLite).
 - **`config.json`**: contiene credenciales de SAP y BD → respaldar de forma
   segura.
@@ -236,15 +241,16 @@ Públicas:
 
 - `GET /login` — página de login
 - `GET /api/health` — healthcheck
-- `GET /api/auth/login` — login (cookie `etl_session`, HttpOnly, SameSite=Lax)
+- `POST /api/auth/login` — login (cookie `etl_session`, HttpOnly, SameSite=Lax)
 - `GET /static/*` — assets
 
-Requieren sesión (`user`): `/inventario`, `/api/auth/me`,
-`/api/auth/password`, `/api/auth/logout`, `/api/last-sync`,
-`/api/etl/trigger`, `/api/live`, `/api/inventory*`.
+Requieren sesión (`user`) **y módulo de licencia `dashboard` habilitado**:
+`/inventario`, `/api/auth/me`, `/api/auth/password`, `/api/auth/logout`,
+`/api/last-sync`, `/api/live`, `/api/inventory*`.
 
 Requieren `admin`: `/etl`, `/panel`, `/api/executions`, `/api/progress`,
-`/api/dashboard`, `/api/tables`, `/api/admin/users*`.
+`/api/dashboard`, `/api/tables`, `/api/admin/users*`,
+`POST /api/etl/trigger`.
 
 Notas de seguridad:
 
@@ -252,6 +258,11 @@ Notas de seguridad:
 - Las passwords se guardan con bcrypt (costo 12).
 - Root no se borra ni degrada por CLI ni por la API; solo root cambia su
   password (el instalador la obliga en el primer login).
+- `POST /api/etl/trigger` es **admin-only**; el botón Sincronizar solo
+  aparece en la vista `/etl` (admin).
+- Las APIs de datos (`/api/inventory*`, `/api/live`, `/api/last-sync`,
+  `/api/etl/trigger`) exigen además el **módulo `dashboard`** de la licencia
+  habilitado; sin él, devuelven `403`.
 - `ETL_COOKIE_SECURE` puede activarse cuando el dashboard se sirva por HTTPS
   (detrás de un proxy).
 
@@ -280,6 +291,11 @@ NOVUS_LICENSE_SERVER_SECRET=<pepper-secreto> \
     --api-key <clave-api-secreta>
 ```
 
+> ⚠️ El `api_key` se almacena como **HMAC-SHA256 con el pepper
+> `NOVUS_LICENSE_SERVER_SECRET`** (comparación constant-time). **Perder o
+> rotar el pepper invalida todos los hashes almacenados** y hay que re-agregar
+> los clientes (`customer add`).
+
 ### 3. Emitir la licencia
 
 ```bash
@@ -294,6 +310,39 @@ NOVUS_LICENSE_SERVER_SECRET=<pepper-secreto> \
 
 La CLI imprime el token JWT. Guardarlo de forma segura (el cliente lo
 necesita solo si activa manualmente; normalmente se obtiene vía API).
+
+### Comandos disponibles del license server
+
+Todos requieren `NOVUS_LICENSE_SERVER_SECRET` en el entorno:
+
+```bash
+.venv/bin/python -m license_server.cli customer add --id <id> --name <nombre> --api-key <clave>
+.venv/bin/python -m license_server.cli customer list
+.venv/bin/python -m license_server.cli customer disable --id <id>
+
+.venv/bin/python -m license_server.cli license issue   --customer <id> --license-id <id> --valid-until <fecha> [--modules ...] [--limit ...]
+.venv/bin/python -m license_server.cli license renew   --license-id <id> --valid-until <fecha>
+.venv/bin/python -m license_server.cli license suspend --license-id <id>
+.venv/bin/python -m license_server.cli license revoke  --license-id <id>
+.venv/bin/python -m license_server.cli license show    --license-id <id>
+.venv/bin/python -m license_server.cli license list
+```
+
+- `renew` extiende la vigencia (`valid_until`) de una licencia emitida.
+- `suspend` la pasa a SUSPENDED (bloquea el acceso sin revocarla); `revoke`
+  la invalida definitivamente.
+
+### Propagación de cambios de licencia (caché del cliente)
+
+El cliente **cachea la licencia firmada por `refresh_minutes`** (default
+720 = 12 h). Consecuencias operativas:
+
+- Una **suspensión/revocación hecha en el servidor tarda hasta 12 h** en
+  alcanzar el dashboard (mientras tanto sirve el caché firmado).
+- **Re-emitir o re-activar en el mismo host sí se detecta de inmediato**
+  (por el mtime del archivo de caché), sin reiniciar.
+- Para efecto inmediato de una revocación: reiniciar el dashboard, o
+  `etl license clear-cache` + reiniciar.
 
 ### 4. Arrancar el license server
 
@@ -339,6 +388,8 @@ etl license activate
 | `sin_licencia_activa` | No se emitió licencia para ese cliente | `license issue --customer ...` en el servidor |
 | `licencia_vencida` | `valid_until` pasó | Renovar: `license renew --license-id ... --valid-until ...` |
 | `modulo_no_contratado` | El módulo no está en `--modules` | Reemitir con los módulos necesarios |
+| Suspensión/revocación "no llega" al cliente | Caché firmada vigente (`refresh_minutes`, 12 h default) | Esperar el refresh, o reiniciar el dashboard / `etl license clear-cache` + reiniciar |
+| `api_key` deja de validar en todos los clientes | Pepper `NOVUS_LICENSE_SERVER_SECRET` perdido/rotado | Re-agregar los clientes con `customer add` (los hashes quedan inválidos) |
 | `no se pudo contactar el servidor` | Servidor caído o firewall | Verificar conectividad; el caché local mantiene el servicio durante `offline_until` |
 
 ---
@@ -379,3 +430,49 @@ python -m cli license inspect --config config.json
 
 Para más detalles sobre los 12 escenarios, generación de tokens y pruebas E2E, consulta [docs/SIMULACION_LICENCIAMIENTO.md](docs/SIMULACION_LICENCIAMIENTO.md).
 
+
+## 13. Despliegue Docker en VM de cliente
+
+Alternativa al instalador systemd (sección 1): plataforma completa
+dockerizada en una VM Linux del cliente.
+
+### Requisitos
+
+- Ubuntu 22.04/24.04, Debian 12, RHEL/Rocky 9; 2 vCPU, 4 GB RAM, 20 GB SSD.
+- Docker Engine ≥ 24.0 y Docker Compose v2.
+- Red: entrada TCP `8000` (dashboard); salida hacia SAP Gateway/Dispatcher
+  (`3300`/`3200`), BD destino (`1433` MSSQL / `5432` PostgreSQL) y HTTPS `443`
+  a `https://licencias.novusit.cl` (validación de licencia).
+
+### Procedimiento
+
+1. Copiar el entregable a `/opt/novus/etl/` y editar ahí el `config.json`
+   (fuente SAP, BD destino, tablas y bloque `license` con
+   `"server": "https://licencias.novusit.cl"`).
+2. Solo con extracción RFC directa: montar el SAP NW RFC SDK 7.50 en
+   `/opt/sap/nwrfcsdk`.
+3. Levantar:
+
+   ```bash
+   docker compose build && docker compose up -d
+   # o con el script de control:
+   ./deploy/etl-docker.sh build && ./deploy/etl-docker.sh up
+   ```
+
+4. Verificar con `./deploy/etl-docker.sh status` y entrar en
+   `http://<VM>:8000` (`admin` / `extractor`, cambio obligatorio de password).
+
+El contenedor corre **systemd dentro de Docker** (dashboard + scheduler);
+`deploy/etl-docker.sh` expone accesos directos: `status`, `logs`, `sync`
+(corrida manual), `report`, `bi` (Parquet/CSV en `./output/`), `inspect`
+(licencia), `users`, `shell`, `down`.
+
+### Persistencia y backup
+
+Todo dato crítico vive en el host, no en el contenedor: `config.json`,
+`data/` (SQLite interna + caché de licencia) y `output/`. Respaldo:
+
+```bash
+tar -czvf /backup/novus_$(date +%Y%m%d).tar.gz \
+  /opt/novus/etl/config.json /opt/novus/etl/data
+```
