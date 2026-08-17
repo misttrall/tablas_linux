@@ -20,10 +20,9 @@ def test_init_db_creates_tables(engine):
 
 
 def test_hash_and_verify_api_key():
-    secret = "s3cr3t"
-    h = license_db.hash_api_key(secret, "clave-cliente")
-    assert license_db.verify_api_key(secret, "clave-cliente", h) is True
-    assert license_db.verify_api_key(secret, "otra", h) is False
+    h = license_db.hash_api_key("clave-cliente")
+    assert license_db.verify_api_key(h, "clave-cliente") is True
+    assert license_db.verify_api_key(h, "otra") is False
 
 
 def test_create_and_get_customer(engine):
@@ -84,3 +83,33 @@ def test_list_licenses_and_events(engine):
     with engine.connect() as conn:
         events = conn.execute(text("SELECT event_type FROM license_events")).fetchall()
     assert events and events[0][0] == "issued"
+
+
+def test_record_event(engine):
+    license_db.create_customer(engine, "empresa_001", "Mi Empresa", "hash1")
+    license_db.issue_license(
+        engine, "empresa_001", "NOVUS-001",
+        valid_from=1_000_000, valid_until=2_000_000, grace_days=7,
+        modules={"derived": True}, limits={},
+    )
+    license_db.record_event(engine, "NOVUS-001", "activated", "by admin")
+    with engine.connect() as conn:
+        events = conn.execute(
+            text("SELECT event_type, detail FROM license_events "
+                 "WHERE event_type = 'activated'")).fetchall()
+    assert len(events) == 1
+    assert events[0][0] == "activated"
+    assert events[0][1] == "by admin"
+
+
+def test_list_customers(engine):
+    license_db.create_customer(engine, "emp_001", "Empresa Uno", "hash1")
+    license_db.create_customer(engine, "emp_002", "Empresa Dos", "hash2")
+    rows = license_db.list_customers(engine)
+    assert len(rows) == 2
+    ids = {r.customer_id for r in rows}
+    assert ids == {"emp_001", "emp_002"}
+
+
+def test_get_license_by_id_not_found(engine):
+    assert license_db.get_license_by_id(engine, "NO-EXISTE") is None
