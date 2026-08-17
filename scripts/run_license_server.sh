@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 HOST="${HOST:-127.0.0.1}"
-PORT="${PORT:-8002}"
+PORT="${PORT:-8080}"
 export NOVUS_LICENSE_SERVER_SECRET="${NOVUS_LICENSE_SERVER_SECRET:-}"
 if [ -z "$NOVUS_LICENSE_SERVER_SECRET" ]; then
   echo "Define NOVUS_LICENSE_SERVER_SECRET" >&2

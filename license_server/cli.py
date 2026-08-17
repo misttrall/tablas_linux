@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from sqlalchemy import create_engine
 
 from . import db as license_db
+from .signing import sign_claims
 
 _PRIVATE_KEY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "private_key.pem")
 _PUBLIC_KEY_PATH = os.path.join(
@@ -70,6 +71,7 @@ def cmd_keygen():
     os.makedirs(os.path.dirname(_PUBLIC_KEY_PATH), exist_ok=True)
     with open(_PRIVATE_KEY_PATH, "wb") as fh:
         fh.write(priv_pem)
+    os.chmod(_PRIVATE_KEY_PATH, 0o600)
     with open(_PUBLIC_KEY_PATH, "wb") as fh:
         fh.write(pub_pem)
     print(f"[ok] clave privada -> {_PRIVATE_KEY_PATH}")
@@ -120,7 +122,24 @@ def cmd_license_issue(args):
     except Exception as exc:
         print(f"[error] no se pudo emitir la licencia: {exc}")
         return 1
+    lic = license_db.get_license_by_id(engine, args.license_id)
+    now = int(_dt.datetime.now(_dt.timezone.utc).timestamp())
+    claims = {
+        "customer_id": lic["customer_id"],
+        "license_id": lic["license_id"],
+        "status": lic["status"],
+        "valid_from": lic["valid_from"],
+        "valid_until": lic["valid_until"],
+        "offline_until": lic["offline_until"],
+        "modules": lic["modules"],
+        "limits": lic["limits"],
+        "iat": now,
+        "exp": lic["offline_until"],
+    }
+    private_key_pem = open(_PRIVATE_KEY_PATH, "rb").read()
+    token = sign_claims(claims, private_key_pem)
     print(f"[ok] licencia '{args.license_id}' emitida para '{args.customer}'")
+    print(f"JWT:\n{token}")
     return 0
 
 
