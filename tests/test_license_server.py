@@ -113,3 +113,112 @@ def test_list_customers(engine):
 
 def test_get_license_by_id_not_found(engine):
     assert license_db.get_license_by_id(engine, "NO-EXISTE") is None
+
+
+from fastapi.testclient import TestClient
+
+from license_server.app import create_app
+from license_server.signing import sign_claims
+from licensing.validator import verify_token
+
+
+@pytest.fixture(scope="module")
+def keypair():
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+    private_key = ed25519.Ed25519PrivateKey.generate()
+    priv_pem = private_key.private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption())
+    pub_pem = private_key.public_key().public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+    return priv_pem, pub_pem
+
+
+@pytest.fixture
+def api_client(keypair):
+    from sqlalchemy.pool import StaticPool
+    eng = create_engine("sqlite://", connect_args={"check_same_thread": False},
+                        poolclass=StaticPool)
+    license_db.init_db(eng)
+    priv_pem, _ = keypair
+    return TestClient(create_app(eng, priv_pem, "test-secret"))
+
+
+@pytest.fixture
+def customer_license():
+    from sqlalchemy.pool import StaticPool
+    eng = create_engine("sqlite://", connect_args={"check_same_thread": False},
+                        poolclass=StaticPool)
+    license_db.init_db(eng)
+    license_db.create_customer(eng, "empresa_001", "Mi Empresa",
+                               license_db.hash_api_key("clave-1"))
+    license_db.issue_license(
+        eng, "empresa_001", "NOVUS-001",
+        valid_from=1_000_000, valid_until=9_000_000, grace_days=7,
+        modules={"derived": True, "dashboard": True, "bi": False},
+        limits={"users": 5})
+    return eng
+
+
+def test_health(api_client):
+    res = api_client.get("/api/health")
+    assert res.status_code == 200
+    assert res.json() == {"status": "ok"}
+
+
+def test_activate_ok(keypair, customer_license):
+    priv_pem, pub_pem = keypair
+    eng = customer_license
+    client = TestClient(create_app(eng, priv_pem, "test-secret"))
+    res = client.post("/api/activate", json={"customer_id": "empresa_001", "api_key": "clave-1"})
+    assert res.status_code == 200
+    body = res.json()
+    claims = verify_token(body["token"], pub_pem)
+    assert claims["customer_id"] == "empresa_001"
+    assert claims["modules"]["derived"] is True
+    assert claims["limits"]["users"] == 5
+    assert body["claims"] == claims
+
+
+def test_activate_bad_api_key(keypair, customer_license):
+    eng = customer_license
+    client = TestClient(create_app(eng, keypair[0], "test-secret"))
+    res = client.post("/api/activate", json={"customer_id": "empresa_001", "api_key": "nope"})
+    assert res.status_code == 401
+    assert res.json()["detail"] == "credenciales_invalidas"
+
+
+def test_activate_unknown_customer(keypair, customer_license):
+    client = TestClient(create_app(customer_license, keypair[0], "test-secret"))
+    res = client.post("/api/activate", json={"customer_id": "otra", "api_key": "x"})
+    assert res.status_code == 401
+
+
+def test_activate_disabled_customer(keypair, customer_license):
+    license_db.set_customer_status(customer_license, "empresa_001", "disabled")
+    client = TestClient(create_app(customer_license, keypair[0], "test-secret"))
+    res = client.post("/api/activate", json={"customer_id": "empresa_001", "api_key": "clave-1"})
+    assert res.status_code == 403
+    assert res.json()["detail"] == "cliente_deshabilitado"
+
+
+def test_activate_suspended_license(keypair, customer_license):
+    license_db.set_license_status(customer_license, "NOVUS-001", "suspended", "suspended")
+    client = TestClient(create_app(customer_license, keypair[0], "test-secret"))
+    res = client.post("/api/activate", json={"customer_id": "empresa_001", "api_key": "clave-1"})
+    assert res.status_code == 403
+    assert res.json()["detail"] == "licencia_suspendida"
+
+
+def test_activate_no_license(keypair):
+    from sqlalchemy.pool import StaticPool
+    eng = create_engine("sqlite://", connect_args={"check_same_thread": False},
+                        poolclass=StaticPool)
+    license_db.init_db(eng)
+    license_db.create_customer(eng, "empresa_001", "Mi Empresa",
+                               license_db.hash_api_key("clave-1"))
+    client = TestClient(create_app(eng, keypair[0], "test-secret"))
+    res = client.post("/api/activate", json={"customer_id": "empresa_001", "api_key": "clave-1"})
+    assert res.status_code == 403
+    assert res.json()["detail"] == "sin_licencia_activa"
