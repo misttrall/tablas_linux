@@ -1,7 +1,5 @@
 import time
 
-import pytest
-
 from licensing import (
     License,
     LicenseBlocked,
@@ -9,6 +7,7 @@ from licensing import (
     LicenseInvalid,
     LicenseNotEntitled,
     LicenseState,
+    LicenseUnreachable,
 )
 
 NOW = int(time.time())
@@ -55,4 +54,5 @@ def test_no_license_allows_everything():
 def test_exceptions_hierarchy():
     assert issubclass(LicenseInvalid, LicenseError)
     assert issubclass(LicenseBlocked, LicenseError)
+    assert issubclass(LicenseUnreachable, LicenseError)
     assert issubclass(LicenseNotEntitled, LicenseError)
