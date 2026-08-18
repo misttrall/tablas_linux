@@ -10,8 +10,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PORT="${PORT:-8001}"
-HOST="${HOST:-0.0.0.0}"
-SECRET="${ETL_SECRET:-demo-secret-para-desarrollo-32-chars-long!}"
+HOST="${HOST:-127.0.0.1}"
 PID_FILE="${PID_FILE:-/tmp/uvicorn8001.pid}"
 LOG_FILE="${LOG_FILE:-/tmp/uvicorn8001.log}"
 
@@ -54,7 +53,9 @@ start() {
     echo "[error] Puerto $PORT está en uso (instancia ajena); no se toca" >&2
     exit 1
   fi
-  ETL_CONFIG="$ROOT/config.json" ETL_SECRET="$SECRET" setsid "$venv_py" -m uvicorn dashboard.app:app \
+  _env=(ETL_CONFIG="$ROOT/config.json")
+  [[ -n "${ETL_SECRET:-}" ]] && _env+=(ETL_SECRET="$ETL_SECRET")
+  "${_env[@]}" setsid "$venv_py" -m uvicorn dashboard.app:app \
     --host "$HOST" --port "$PORT" > "$LOG_FILE" 2>&1 &
   echo $! > "$PID_FILE"
   sleep 1

@@ -38,8 +38,8 @@ def setup_demo_database():
     # 2. Crear usuarios iniciales
     auth_engine._ENGINE_PROVIDER = lambda: engine
     try:
-        auth_users.create_user("admin", "admin", role="admin", is_root=True, must_change_password=False)
-        auth_users.create_user("analista", "demo1234", role="user", is_root=False, must_change_password=False)
+        auth_users.create_user("admin", "admin", role="admin", is_root=True, must_change_password=True)
+        auth_users.create_user("analista", "demo1234", role="user", is_root=False, must_change_password=True)
     except Exception:
         pass
 
