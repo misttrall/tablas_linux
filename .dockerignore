@@ -3,9 +3,12 @@
 venv
 __pycache__
 *.pyc
-logs
-output
 *.sqlite
 *.sqlite3
 config.json
+data/*.sqlite
+data/*.sqlite3
+data/license_cache.json
+logs
+output
 .env

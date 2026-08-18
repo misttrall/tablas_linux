@@ -2,30 +2,42 @@ FROM python:3.12-slim
 
 WORKDIR /opt/etl
 
-# El run contra SAP requiere el SDK NW RFC (licenciado), que NO se incluye en
-# la imagen; se monta en runtime en /opt/sap/nwrfcsdk y se expone via env vars.
-ENV SAPNWRFC_HOME=/opt/sap/nwrfcsdk \
-    LD_LIBRARY_PATH=/opt/sap/nwrfcsdk/lib
+# Instalar dependencias del sistema mínimas
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY requirements-ci.txt /opt/etl/requirements-ci.txt
-RUN pip install --no-cache-dir -r /opt/etl/requirements-ci.txt
+# Crear usuario sin privilegios para ejecución segura
+RUN useradd -m -u 1001 -s /bin/bash etlapp
 
-COPY cli.py /opt/etl/cli.py
-COPY etl_runner.py /opt/etl/etl_runner.py
-COPY db /opt/etl/db
-COPY sources /opt/etl/sources
-COPY derived /opt/etl/derived
-COPY utils /opt/etl/utils
-COPY migrations /opt/etl/migrations
-COPY dashboard /opt/etl/dashboard
-COPY config.example.json /opt/etl/config.example.json
+# Copiar requirements completos
+COPY requirements-base.txt requirements-etl.txt requirements-web.txt requirements-ci.txt ./
+RUN pip install --no-cache-dir -r requirements-ci.txt
 
-# La config real (con credenciales) se monta en runtime; no se copia al image.
+COPY cli.py etl_runner.py config.example.json ./
+COPY db ./db
+COPY sources ./sources
+COPY derived ./derived
+COPY utils ./utils
+COPY migrations ./migrations
+COPY dashboard ./dashboard
+COPY licensing ./licensing
+COPY bi ./bi
+COPY schemas ./schemas
+
+# Asignar permisos al usuario etlapp
+RUN chown -R etlapp:etlapp /opt/etl /tmp
+
+USER etlapp
+
 ENV ETL_CONFIG=/opt/etl/config.json \
-    ETL_LIVE_FILE=/tmp/etl_live.json
+    ETL_LIVE_FILE=/tmp/etl_live.json \
+    TZ=America/Santiago \
+    PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health', timeout=5).status==200 else 1)"
+HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/api/health || exit 1
 
-CMD ["python", "-m", "uvicorn", "dashboard.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "dashboard.app:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"]
