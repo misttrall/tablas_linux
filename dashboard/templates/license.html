@@ -11,86 +11,207 @@
   <link rel="stylesheet" href="/static/common.css">
   <style>
     body {
-      background: radial-gradient(circle at 50% 20%, var(--navy-850) 0%, var(--navy-950) 100%);
+      background: radial-gradient(circle at 50% 20%, var(--navy-light) 0%, var(--navy-dark) 100%);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 24px;
+      font-family: var(--font-main);
     }
     .lock-card {
-      background: var(--surface);
-      border-radius: var(--radius-xl);
-      padding: 40px 36px;
-      max-width: 520px;
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 44px 38px;
+      max-width: 540px;
       width: 100%;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      border-top: 4px solid var(--orange);
       text-align: center;
+      animation: fadeIn 0.3s ease-out;
     }
     .lock-icon-badge {
-      width: 64px;
-      height: 64px;
+      width: 68px;
+      height: 68px;
       margin: 0 auto 20px;
-      background: var(--danger-light);
-      color: var(--danger);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
-      border: 2px solid rgba(239, 68, 68, 0.2);
+      font-size: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .lock-icon-badge.danger {
+      background: #FEE2E2;
+      color: #DC2626;
+      border: 2px solid #FCA5A5;
+    }
+    .lock-icon-badge.warning {
+      background: #FEF3C7;
+      color: #D97706;
+      border: 2px solid #FCD34D;
+    }
+    .lock-icon-badge.success {
+      background: #DCFCE7;
+      color: #16A34A;
+      border: 2px solid #86EFAC;
     }
     .lock-card h1 {
       font-size: 22px;
       font-weight: 800;
-      color: var(--navy-950);
+      color: var(--navy);
       letter-spacing: -0.02em;
       margin-bottom: 10px;
     }
     .lock-card p {
       font-size: 14px;
-      color: var(--text-muted);
+      color: var(--gray-500);
       line-height: 1.6;
       margin-bottom: 24px;
     }
     .info-box {
-      background: var(--surface-subtle);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 14px 16px;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-sm);
+      padding: 16px 18px;
       text-align: left;
       font-size: 13px;
-      color: var(--text-main);
-      margin-bottom: 24px;
+      color: var(--gray-700);
+      margin-bottom: 26px;
     }
     .info-box div {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 6px;
+      align-items: center;
+      margin-bottom: 8px;
     }
     .info-box div:last-child { margin-bottom: 0; }
-    .info-box span.lbl { color: var(--text-muted); font-weight: 600; }
+    .info-box span.lbl { color: var(--gray-500); font-weight: 600; }
     .info-box span.val { font-weight: 700; font-family: var(--font-mono); }
+    .badge-status {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .badge-status.danger { background: #FEE2E2; color: #DC2626; }
+    .badge-status.warning { background: #FEF3C7; color: #D97706; }
+    .badge-status.success { background: #DCFCE7; color: #16A34A; }
   </style>
 </head>
 <body>
   <div class="lock-card">
-    <div class="lock-icon-badge">🔒</div>
-    <h1>Acceso Restringido por Licencia</h1>
-    <p>El servicio para esta instancia se encuentra suspendido, vencido o el módulo analítico no forma parte del plan contratado. Los datos almacenados permanecen seguros y resguardados.</p>
+    <div class="lock-icon-badge danger" id="lockIcon">🔒</div>
+    <h1 id="lockHeading">Acceso Restringido por Licencia</h1>
+    <p id="lockDescription">El servicio para esta instancia se encuentra restringido. Los datos existentes permanecen seguros y resguardados.</p>
     
     <div class="info-box">
-      <div><span class="lbl">Plataforma:</span><span class="val">Novus Data Platform</span></div>
-      <div><span class="lbl">Estado:</span><span class="val" style="color:var(--danger)">SUSPENDIDO / VENCIDO</span></div>
-      <div><span class="lbl">Canal de Soporte:</span><span class="val">soporte@novustec.com</span></div>
+      <div><span class="lbl">Cliente ID:</span><span class="val" id="licCustomer">-</span></div>
+      <div><span class="lbl">Licencia ID:</span><span class="val" id="licId">-</span></div>
+      <div><span class="lbl">Estado de Licencia:</span><span class="val" id="licStateWrap"><span class="badge-status danger" id="licState">SUSPENDIDO</span></span></div>
+      <div><span class="lbl">Válida Hasta:</span><span class="val" id="licExpiry">-</span></div>
+      <div><span class="lbl">Período de Gracia:</span><span class="val" id="licGrace">-</span></div>
+      <div><span class="lbl">Soporte Técnico:</span><span class="val" style="color:var(--navy);">soporte@novusit.cl</span></div>
     </div>
 
     <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-      <button class="btn btn-secondary" onclick="logout()">Cerrar Sesión</button>
+      <button class="btn btn-secondary" id="btnBackToDashboard" onclick="goBackToApp()">← Volver al Dashboard</button>
       <button class="btn btn-primary" onclick="location.reload()">Reintentar Validación</button>
     </div>
   </div>
+
   <script src="/static/common.js"></script>
+  <script>
+    let currentUser = null;
+
+    async function checkCurrentUser() {
+      try {
+        currentUser = await me();
+        const btn = document.getElementById('btnBackToDashboard');
+        if (btn && currentUser && currentUser.username) {
+          btn.textContent = '← Volver al Dashboard';
+        }
+      } catch (e) {
+        const btn = document.getElementById('btnBackToDashboard');
+        if (btn) {
+          btn.textContent = 'Iniciar Sesión';
+        }
+      }
+    }
+
+    function goBackToApp() {
+      if (currentUser) {
+        location.href = currentUser.role === 'admin' ? '/panel' : '/derivadas';
+      } else {
+        location.href = '/login';
+      }
+    }
+
+    async function loadLicenseDetail() {
+      checkCurrentUser();
+      try {
+        const res = await fetch('/api/public/license-status?t=' + Date.now());
+        const data = await res.json();
+        
+        document.getElementById('licCustomer').textContent = data.customer || 'empresa_sandbox';
+        document.getElementById('licId').textContent = data.license || 'NOVUS-TEST-001';
+        
+        const state = data.state || 'UNKNOWN';
+        const stEl = document.getElementById('licState');
+        const iconEl = document.getElementById('lockIcon');
+        const hEl = document.getElementById('lockHeading');
+        const dEl = document.getElementById('lockDescription');
+
+        stEl.textContent = state;
+
+        if (state === 'ACTIVE') {
+          stEl.className = 'badge-status success';
+          iconEl.className = 'lock-icon-badge success';
+          iconEl.textContent = '✅';
+          hEl.textContent = 'Licencia Activa y Válida';
+          dEl.textContent = 'Tu licencia se encuentra activa. Si experimentas problemas de acceso, verifica los permisos de tu usuario.';
+        } else if (state === 'GRACE') {
+          stEl.className = 'badge-status warning';
+          iconEl.className = 'lock-icon-badge warning';
+          iconEl.textContent = '⚠️';
+          hEl.textContent = 'Licencia en Período de Gracia';
+          dEl.textContent = 'El servicio continúa operativo temporalmente. Quedan ' + (data.grace_days_left != null ? data.grace_days_left : 7) + ' días antes de la interrupción del acceso.';
+        } else if (state === 'SUSPENDED') {
+          stEl.className = 'badge-status danger';
+          iconEl.className = 'lock-icon-badge danger';
+          iconEl.textContent = '⛔';
+          hEl.textContent = 'Servicio Suspendido por Novus IT';
+          dEl.textContent = 'Esta instancia ha sido suspendida temporalmente por administración. Contacta a Novus IT para regularizar el servicio.';
+        } else if (state === 'EXPIRED') {
+          stEl.className = 'badge-status danger';
+          iconEl.className = 'lock-icon-badge danger';
+          iconEl.textContent = '⏱️';
+          hEl.textContent = 'Licencia Anual Vencida';
+          dEl.textContent = 'La vigencia de tu contrato ha expirado. Todos los datos se conservan de forma íntegra; renueva tu suscripción para continuar.';
+        } else if (state === 'REVOKED') {
+          stEl.className = 'badge-status danger';
+          iconEl.className = 'lock-icon-badge danger';
+          iconEl.textContent = '🚫';
+          hEl.textContent = 'Licencia Revocada';
+          dEl.textContent = 'La clave criptográfica de esta instancia fue revocada. Contacta al canal oficial de soporte.';
+        }
+
+        if (data.valid_until) {
+          const d = new Date(data.valid_until * 1000);
+          document.getElementById('licExpiry').textContent = isNaN(d.getTime()) ? '-' : d.toLocaleDateString('es-CL');
+        }
+        if (data.offline_until) {
+          const g = new Date(data.offline_until * 1000);
+          document.getElementById('licGrace').textContent = isNaN(g.getTime()) ? '-' : g.toLocaleDateString('es-CL');
+        }
+      } catch (e) {
+        console.error('Error al consultar licencia:', e);
+      }
+    }
+
+    loadLicenseDetail();
+  </script>
 </body>
 </html>

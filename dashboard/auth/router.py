@@ -55,8 +55,25 @@ class PasswordReset(BaseModel):
     new_password: str
 
 
-def _cookie_secure():
-    return os.environ.get("ETL_COOKIE_SECURE", "").lower() in ("1", "true", "yes")
+def _extract_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        # Tomar la IP original del cliente (primera en la cadena)
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _cookie_secure(request: Request | None = None) -> bool:
+    env_setting = os.environ.get("ETL_COOKIE_SECURE", "").lower()
+    if env_setting in ("1", "true", "yes"):
+        return True
+    if env_setting in ("0", "false", "no"):
+        return False
+    if request is not None:
+        proto = request.headers.get("x-forwarded-proto", "").lower()
+        if proto == "https" or request.url.scheme == "https":
+            return True
+    return False
 
 
 def _validate_password(password):
@@ -69,7 +86,7 @@ def _validate_password(password):
 
 @router.post("/api/auth/login")
 def login(body: LoginRequest, response: Response, request: Request):
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = _extract_client_ip(request)
     allowed, retry_after = login_limiter.check(client_ip)
     if not allowed:
         raise HTTPException(
@@ -92,7 +109,7 @@ def login(body: LoginRequest, response: Response, request: Request):
         value=token,
         httponly=True,
         samesite="lax",
-        secure=_cookie_secure(),
+        secure=_cookie_secure(request),
         max_age=security.token_ttl_hours() * 3600,
         path="/",
     )

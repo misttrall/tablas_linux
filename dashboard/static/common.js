@@ -1,10 +1,100 @@
 async function api(url, opts = {}) {
   const res = await fetch(url, opts);
-  if (res.status === 401 || res.status === 403) {
+  if (res.status === 401) {
     if (location.pathname !== '/login') location.href = '/login';
     throw new Error('no_authenticated');
   }
+  if (res.status === 403) {
+    try {
+      const clone = res.clone();
+      const data = await clone.json();
+      const detail = data.detail || '';
+      if (typeof detail === 'string' && (detail.startsWith('licencia:') || detail.startsWith('modulo_no_contratado'))) {
+        if (location.pathname !== '/license') {
+          location.href = '/license';
+        }
+        throw new Error(detail);
+      }
+    } catch (e) {
+      if (e.message && (e.message.startsWith('licencia:') || e.message.startsWith('modulo_no_contratado'))) throw e;
+    }
+    if (location.pathname !== '/login' && location.pathname !== '/license') location.href = '/login';
+    throw new Error('forbidden');
+  }
   return res;
+}
+
+let _licenseDataCache = null;
+
+async function getLicenseStatusData(force = false) {
+  if (_licenseDataCache && !force) return _licenseDataCache;
+  try {
+    const res = await fetch('/api/public/license-status?t=' + Date.now());
+    _licenseDataCache = await res.json();
+  } catch(e) {
+    _licenseDataCache = { state: 'UNKNOWN', is_valid: false, is_grace: false };
+  }
+  return _licenseDataCache;
+}
+
+async function updateHeaderLicensePill() {
+  const pill = document.getElementById('headerLicensePill');
+  if (!pill) return;
+  if (location.pathname === '/login' || location.pathname === '/license') return;
+  const data = await getLicenseStatusData();
+  if (data.state === 'GRACE') {
+    const label = data.grace_days_left != null ? 'Período de Gracia (' + data.grace_days_left + 'd)' : 'Período de Gracia';
+    pill.innerHTML =
+      '<a href="/license" class="header-license-badge warning" title="' + escapeHtml(data.message || '') + '">' +
+      '<span class="pulse-dot warning"></span> ' + escapeHtml(label) +
+      '</a>';
+  } else if (data.state === 'ACTIVE') {
+    pill.innerHTML =
+      '<a href="/license" class="header-license-badge success" title="' + escapeHtml(data.message || '') + '">' +
+      '<span class="pulse-dot success"></span> Licencia Activa' +
+      '</a>';
+  } else if (data.state === 'SUSPENDED' || data.state === 'EXPIRED' || data.state === 'REVOKED') {
+    pill.innerHTML =
+      '<a href="/license" class="header-license-badge danger" title="' + escapeHtml(data.message || data.state) + '">' +
+      '<span class="pulse-dot danger"></span> ' + escapeHtml(data.state) +
+      '</a>';
+  }
+}
+
+async function checkAndRenderLicenseBanner() {
+  // NUNCA desplegar banners en la pantalla de login ni en la pantalla dedicada de licencia
+  if (location.pathname === '/login' || location.pathname === '/license') {
+    return true;
+  }
+
+  try {
+    const data = await getLicenseStatusData(true);
+    if (!data.is_valid && data.state !== 'GRACE') {
+      location.href = '/license';
+      return false;
+    }
+
+    const container = document.getElementById('globalLicenseBanner');
+    if (data.state === 'GRACE') {
+      const bannerHtml =
+        '<div class="license-banner-grace">' +
+        '<div style="display:flex; align-items:center; gap:12px;">' +
+        '<span style="font-size:20px; line-height:1;">⚠️</span>' +
+        '<span><strong>Aviso de Licencia:</strong> ' + escapeHtml(data.message || 'Licencia en período de gracia.') + '</span>' +
+        '</div>' +
+        '<a href="/license" class="license-grace-btn">Ver Estado / Renovar</a>' +
+        '</div>';
+
+      if (container) {
+        container.innerHTML = bannerHtml;
+      }
+    } else if (container) {
+      container.innerHTML = '';
+    }
+
+    updateHeaderLicensePill();
+  } catch (e) {}
+  return true;
 }
 
 async function me() {
@@ -182,6 +272,9 @@ async function bootPage(allowedRoles) {
   } catch (e) {
     return null;
   }
+  const licOk = await checkAndRenderLicenseBanner();
+  if (!licOk) return null;
+
   if (allowedRoles && !allowedRoles.includes(u.role)) {
     location.href = u.role === 'admin' ? '/panel' : '/derivadas';
     return null;
@@ -242,11 +335,14 @@ function renderUserbar(user) {
     '<div class="nav-links">' +
     links.join('') +
     '</div>' +
+    '<div id="headerLicensePill"></div>' +
     '<div class="user-profile-badge">' +
     '<span class="user-avatar-circle">' + escapeHtml(initial) + '</span>' +
     '<span>' + escapeHtml(user.username) + '</span>' +
     '</div>' +
     '<button class="btn btn-secondary" style="padding:6px 16px; font-size:12.5px;" onclick="logout()">Salir</button>';
+
+  updateHeaderLicensePill();
 }
 
 function userMenuPassword() {
@@ -254,9 +350,13 @@ function userMenuPassword() {
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', renderBranding);
+  document.addEventListener('DOMContentLoaded', function () {
+    renderBranding();
+    checkAndRenderLicenseBanner();
+  });
 } else {
   renderBranding();
+  checkAndRenderLicenseBanner();
 }
 
 function renderSapModal() {

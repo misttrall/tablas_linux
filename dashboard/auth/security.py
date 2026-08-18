@@ -18,7 +18,20 @@ MIN_SECRET_LENGTH = 32
 def get_secret() -> str:
     secret = os.environ.get(SECRET_ENV)
     if not secret:
-        raise RuntimeError(f"Falta la variable de entorno {SECRET_ENV}")
+        # Si no se pasó por ENV, usar archivo secreto persistente con permisos 0600
+        secret_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".etl_secret")
+        if os.path.exists(secret_file):
+            with open(secret_file, "r", encoding="utf-8") as f:
+                secret = f.read().strip()
+        else:
+            import secrets
+            secret = secrets.token_urlsafe(32)
+            try:
+                with open(secret_file, "w", encoding="utf-8") as f:
+                    f.write(secret)
+                os.chmod(secret_file, 0o600)
+            except OSError:
+                pass
     if len(secret.encode("utf-8")) < MIN_SECRET_LENGTH:
         import warnings
         warnings.warn(

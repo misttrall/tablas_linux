@@ -8,6 +8,8 @@ import signal
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
+import zoneinfo
 
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -218,6 +220,26 @@ class ProgressItem(BaseModel):
     updated_at: str
 
 
+import zoneinfo
+
+CHILE_TZ = zoneinfo.ZoneInfo("America/Santiago")
+
+
+def to_chile_time_str(dt_val) -> str:
+    if not dt_val:
+        return ""
+    val_str = str(dt_val).strip()
+    if not val_str:
+        return ""
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M"):
+        try:
+            dt = datetime.strptime(val_str.rstrip("Z"), fmt).replace(tzinfo=zoneinfo.ZoneInfo("UTC"))
+            return dt.astimezone(CHILE_TZ).strftime("%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+    return val_str
+
+
 class ExecutionItem(BaseModel):
     id: int
     status: str
@@ -241,7 +263,8 @@ def _last_execution():
     if row is None:
         return None
     return {"id": row.id, "status": row.status,
-            "start_time": str(row.start_time), "end_time": str(row.end_time or "")}
+            "start_time": to_chile_time_str(row.start_time),
+            "end_time": to_chile_time_str(row.end_time)}
 
 
 @app.get("/api/executions")
@@ -254,8 +277,8 @@ def api_executions(last: int = 10, user=Depends(require_license_module("dashboar
             {"n": last},
         ).fetchall()
     return [ExecutionItem(id=r.id, status=r.status,
-                          start_time=str(r.start_time),
-                          end_time=str(r.end_time or "")).model_dump() for r in rows]
+                          start_time=to_chile_time_str(r.start_time),
+                          end_time=to_chile_time_str(r.end_time)).model_dump() for r in rows]
 
 
 @app.get("/api/progress")
@@ -270,7 +293,7 @@ def api_progress(user=Depends(require_license_module("dashboard", admin_only=Tru
     return [ProgressItem(table_name=r.table_name, status=str(r.status or ""),
                          rows_loaded=r.rows_loaded or 0,
                          last_delta_value=str(r.last_delta_value or ""),
-                         updated_at=str(r.updated_at or "")).model_dump() for r in rows]
+                         updated_at=to_chile_time_str(r.updated_at)).model_dump() for r in rows]
 
 
 @app.get("/api/dashboard")
@@ -285,15 +308,31 @@ def api_dashboard(user=Depends(require_license_module("dashboard", admin_only=Tr
             text("SELECT table_name, status, rows_loaded, last_delta_value, updated_at "
                  "FROM etl_progress ORDER BY table_name"),
         ).fetchall()
-    last = runs[0] if runs else None
 
-    def row_dict(r):
-        return dict(zip(r._mapping.keys(), r))
+    def map_exec(r):
+        return {
+            "id": r.id,
+            "status": r.status,
+            "start_time": to_chile_time_str(r.start_time),
+            "end_time": to_chile_time_str(r.end_time),
+        }
+
+    def map_prog(p):
+        return {
+            "table_name": p.table_name,
+            "status": p.status,
+            "rows_loaded": p.rows_loaded,
+            "last_delta_value": p.last_delta_value,
+            "updated_at": to_chile_time_str(p.updated_at),
+        }
+
+    execs = [map_exec(r) for r in runs]
+    last = execs[0] if execs else {}
 
     return DashboardData(
-        executions=[row_dict(r) for r in runs],
-        progress=[row_dict(p) for p in prog],
-        last_execution=row_dict(last) if last else {},
+        executions=execs,
+        progress=[map_prog(p) for p in prog],
+        last_execution=last,
     ).model_dump()
 
 
@@ -943,6 +982,59 @@ _LICENSE_MESSAGES = {
 }
 
 
+@app.get("/api/public/license-status")
+def api_public_license_status():
+    config = load_config(os.environ.get("ETL_CONFIG"))
+    try:
+        lic = get_manager(config).get_license()
+    except LicenseError as exc:
+        return {
+            "state": "UNKNOWN",
+            "is_valid": False,
+            "is_grace": False,
+            "message": str(exc),
+            "customer": "N/A",
+            "license": "N/A",
+            "days_left": 0,
+            "grace_days_left": 0,
+            "modules": {},
+        }
+    now = time.time()
+    state = lic.state(now)
+    valid_until = lic.valid_until or now
+    offline_until = lic.offline_until or now
+    days_left = max(0, int((valid_until - now) / 86400))
+    grace_days_left = max(0, int((offline_until - now) / 86400))
+    is_valid = state in (LicenseState.ACTIVE, LicenseState.GRACE) and lic.has("dashboard")
+    if state == LicenseState.GRACE:
+        msg = f"El sistema se encuentra en período de gracia (quedan {grace_days_left} días para regularizar la suscripción antes de la suspensión del servicio)."
+    elif state == LicenseState.ACTIVE:
+        msg = f"Licencia activa ({days_left} días de vigencia restante)."
+    elif state == LicenseState.EXPIRED:
+        msg = "Licencia anual vencida. Los datos existentes se conservan; renueva tu suscripción para reactivar el servicio."
+    elif state == LicenseState.SUSPENDED:
+        msg = "Servicio suspendido temporalmente por Novus IT. Contacta a soporte para regularizar."
+    elif state == LicenseState.REVOKED:
+        msg = "Licencia revocada. Contacta al canal oficial de soporte."
+    else:
+        msg = _LICENSE_MESSAGES.get(state, "")
+
+    return {
+        "state": state.value,
+        "is_valid": is_valid,
+        "is_grace": state == LicenseState.GRACE,
+        "customer": lic.customer_id or "N/A",
+        "license": lic.license_id or "N/A",
+        "valid_until": lic.valid_until,
+        "offline_until": lic.offline_until,
+        "days_left": days_left,
+        "grace_days_left": grace_days_left,
+        "modules": lic.modules or {},
+        "limits": lic.limits or {},
+        "message": msg,
+    }
+
+
 @app.get("/api/license")
 def api_license(user=Depends(require_user)):
     config = load_config(os.environ.get("ETL_CONFIG"))
@@ -963,12 +1055,17 @@ def api_license(user=Depends(require_user)):
     }
 
 
+@app.get("/license", response_class=HTMLResponse, include_in_schema=False)
+def page_license():
+    return _page("license.html")
+
+
 @app.get("/", include_in_schema=False)
 def root(user=Depends(current_user_or_none)):
     if user is None:
         return RedirectResponse(url="/login", status_code=307)
     if not _check_page_license():
-        return RedirectResponse(url="/derivadas", status_code=307)
+        return RedirectResponse(url="/license", status_code=307)
     return RedirectResponse(
         url="/panel" if user["role"] == "admin" else "/derivadas",
         status_code=307,

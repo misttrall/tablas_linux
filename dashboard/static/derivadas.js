@@ -176,10 +176,12 @@ function renderItems(data) {
 
   const thead = '<thead><tr>' +
     cols.map(function (c) {
-      const cls = isNumericColumn(c.as) ? ' style="text-align:right;"' : '';
+      let cls = '';
+      if (isNumericColumn(c.as)) cls = ' style="text-align:right;"';
+      else if (c.as === 'Centro' || c.as === 'Almacen' || c.as === 'WERKS' || c.as === 'LGORT') cls = ' style="text-align:center;"';
       return '<th' + cls + '>' + escapeHtml(c.label || c.as) + '</th>';
     }).join('') +
-    '<th style="text-align:center;">Estado Stock</th>' +
+    '<th style="text-align:center; min-width:105px;">Estado Stock</th>' +
     '</tr></thead>';
 
   const tbody = '<tbody>' +
@@ -193,8 +195,18 @@ function renderItems(data) {
         const val = r[c.as];
         const num = isNumericColumn(c.as);
         const formatted = formatCell(c.as, val);
-        const style = num ? ' style="text-align:right; font-family:var(--font-mono);"' : '';
-        return '<td' + style + '>' + escapeHtml(formatted) + '</td>';
+        let style = '';
+        let className = '';
+        if (num) {
+          style = ' style="text-align:right; font-family:var(--font-mono); font-weight:600;"';
+        } else if (c.as === 'Descripcion' || c.as === 'MAKTX') {
+          className = ' class="desc-cell"';
+        } else if (c.as === 'MATNR' || c.as === 'Material') {
+          style = ' style="font-weight:700; color:var(--navy);"';
+        } else if (c.as === 'Centro' || c.as === 'Almacen' || c.as === 'WERKS' || c.as === 'LGORT') {
+          style = ' style="text-align:center;"';
+        }
+        return '<td' + className + style + '>' + escapeHtml(formatted) + '</td>';
       }).join('');
 
       const badge = isLow

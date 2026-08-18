@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/static/common.css">
 </head>
 <body>
+  <div id="globalLicenseBanner"></div>
   <header>
     <div class="brand-wrapper">
       <img id="appLogo" src="/static/novus-mark.png" alt="Novus IT" style="height:32px; width:32px; object-fit:contain; display:inline-block; vertical-align:middle; margin-right:8px;">
@@ -103,19 +104,20 @@
 
       const eb = document.querySelector('#executions tbody');
       eb.innerHTML = data.executions.map(e =>
-        '<tr><td>' + e.id + '</td><td><span class="badge ' + e.status + '">' + e.status +
-        '</span></td><td>' + e.start_time + '</td><td>' + e.end_time + '</td></tr>').join('');
+        '<tr><td style="font-weight:700; color:var(--navy);">#' + e.id + '</td><td><span class="badge ' + e.status + '">' + e.status +
+        '</span></td><td style="font-family:var(--font-mono); font-size:12.5px;">' + (e.start_time || '-') +
+        '</td><td style="font-family:var(--font-mono); font-size:12.5px;">' + (e.end_time || '-') + '</td></tr>').join('');
 
       const pb = document.querySelector('#progress tbody');
       pb.innerHTML = data.progress.map(p =>
-        '<tr><td>' + p.table_name + '</td><td><span class="badge ' + p.status + '">' + p.status +
-        '</span></td><td>' + p.rows_loaded + '</td><td>' + p.last_delta_value +
-        '</td><td>' + p.updated_at + '</td></tr>').join('');
+        '<tr><td style="font-weight:700;">' + p.table_name + '</td><td><span class="badge ' + p.status + '">' + p.status +
+        '</span></td><td style="text-align:right; font-family:var(--font-mono);">' + (p.rows_loaded || 0).toLocaleString('es-CL') + '</td><td style="font-family:var(--font-mono); font-size:12px;">' + p.last_delta_value +
+        '</td><td style="font-family:var(--font-mono); font-size:12.5px;">' + (p.updated_at || '-') + '</td></tr>').join('');
 
       const sel = document.getElementById('runSelect');
       const prev = sel.value;
       sel.innerHTML = data.executions.map(e =>
-        '<option value="' + e.id + '">#' + e.id + ' ' + e.status + ' (' + e.start_time + ')</option>').join('');
+        '<option value="' + e.id + '">#' + e.id + ' ' + e.status + ' (' + e.start_time + ' CLT)</option>').join('');
       if (prev && sel.querySelector('option[value="' + prev + '"]')) { sel.value = prev; }
       if (!sel.value && sel.options.length) { sel.value = sel.options[0].value; }
       if (sel.options.length) { loadRunDetail(); }
@@ -128,27 +130,20 @@
       const rows = await res.json();
       const tb = document.querySelector('#runDetail tbody');
       tb.innerHTML = rows.map(r =>
-        '<tr><td>' + r.table_name + '</td><td><span class="badge ' + r.status + '">' + r.status +
-        '</span></td><td>' + (r.chunks_ok || 0) + '/' + (r.chunks_total || 0) +
-        '</td><td>' + (r.rows_extracted || 0) + '</td><td>' + (r.duration_s || 0) + '</td></tr>').join('');
+        '<tr><td style="font-weight:700;">' + r.table_name + '</td><td><span class="badge ' + r.status + '">' + r.status +
+        '</span></td><td style="text-align:center;">' + (r.chunks_ok || 0) + '/' + (r.chunks_total || 0) +
+        '</td><td style="text-align:right; font-family:var(--font-mono);">' + (r.rows_extracted || 0).toLocaleString('es-CL') + '</td><td style="text-align:right; font-family:var(--font-mono);">' + (r.duration_s || 0) + 's</td></tr>').join('');
     }
 
     let wasRunning = false;
     let lastSyncInfo = null;
-
-    function formatSyncTime(ts) {
-      if (!ts) return null;
-      const d = new Date(ts.replace(' ', 'T'));
-      return isNaN(d.getTime()) ? null : d.toLocaleString('es-CL');
-    }
 
     function renderSyncStatus() {
       const status = document.getElementById('syncStatus');
       if (!lastSyncInfo) {
         status.textContent = 'Inactivo. Aún no hay sincronizaciones.';
       } else if (lastSyncInfo.end_time) {
-        const t = formatSyncTime(lastSyncInfo.end_time);
-        status.textContent = 'Inactivo. La última sincronización fue ' + (t || lastSyncInfo.end_time);
+        status.textContent = 'Inactivo. Última sincronización: ' + lastSyncInfo.end_time + ' (Hora Chile)';
       } else {
         status.textContent = 'Inactivo. La última sincronización quedó en ' + lastSyncInfo.status + ' (sin terminar).';
       }
