@@ -331,6 +331,9 @@ scenario() {
   if [[ -f "$SANDBOX_DIR/license_cache.json" ]]; then
     mkdir -p "$ROOT/data"
     cp "$SANDBOX_DIR/license_cache.json" "$ROOT/data/license_cache.json"
+    if [[ -f "$SANDBOX_DIR/novus_public.pem" ]]; then
+      cp "$SANDBOX_DIR/novus_public.pem" "$ROOT/data/novus_public.pem"
+    fi
   fi
   echo ""
   echo "[info] Estado resultante de la licencia:"
