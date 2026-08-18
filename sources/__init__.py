@@ -1,5 +1,6 @@
 from .base import SourceConnector
 from .config_resolver import resolve_source_config, validate_environment, validate_prd_limits
+from .demo import DemoConnector
 from .generic.csv import CSVConnector
 from .generic.http import HTTPConnector
 from .sap import SAPConnector
@@ -12,6 +13,7 @@ __all__ = [
     "CSVConnector",
     "HTTPConnector",
     "SAPConnector",
+    "DemoConnector",
     "CONNECTORS",
     "get_source",
 ]
@@ -20,6 +22,7 @@ CONNECTORS = {
     "sap": SAPConnector,
     "http": HTTPConnector,
     "csv": CSVConnector,
+    "demo": DemoConnector,
 }
 
 

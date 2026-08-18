@@ -26,7 +26,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["sap", "csv", "http"]
+          "enum": ["sap", "csv", "http", "demo"]
         },
         "config": { "type": "object" }
       },
