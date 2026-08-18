@@ -1,39 +1,49 @@
 # Python
 __pycache__/
 *.pyc
+*.pyo
 
 # Empaquetado
 *.egg-info/
 dist/
 build/
 
-# Tests
+# Tests & Coverage
 .pytest_cache/
+.coverage
+htmlcov/
 
-# Logs
+# Logs & Traces
 *.log
-
-# SAP traces
 *.trc
+logs/
 
-# Config (secretos)
+# Config & Secretos locales
 config.json
 .env
+.etl_secret
 
-# Base de datos locales
+# Claves privadas criptográficas (NUNCA commitear)
+license_server/private_key.pem
+*private*.pem
+license_server/*.db
+
+# Base de datos locales y cache de runtime
 *.db
 *.sqlite
 *.sqlite3
+data/*.sqlite
+data/*.sqlite3
+data/license_cache.json
 
-# Reportes y archivos generados (contienen datos del cliente)
+# Reportes y archivos generados
 output/
 
-# Wheels
+# Binarios descargados
+scripts/bin/
 *.whl
 
 # Virtualenv
 venv/
 .venv/
-
-# Claves del license server (nunca se commitean)
-license_server/private_key.pem
+.azure-cli-env/
